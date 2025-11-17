@@ -180,7 +180,7 @@ export function MantenimientoEmpresas() {
 
     if (logo) formData.append("logo", logo);
 
-    fetch("http://138.197.204.143/api/empresas", {
+    fetch("https://jflowsdev.duckdns.org/api/empresas", {
       method: "POST",
       body: formData,
     })
@@ -234,7 +234,7 @@ export function MantenimientoEmpresas() {
     if (logo) formData.append("logo", logo);
 
     fetch(
-      `http://138.197.204.143/api/empresas/${editingEmpresa}`,
+      `https://jflowsdev.duckdns.org/api/empresas/${editingEmpresa}`,
       {
         method: "POST",
         headers: {
@@ -254,7 +254,7 @@ export function MantenimientoEmpresas() {
   // DELETE
   // -----------------------------------------------------------
   const handleDelete = (id) => {
-    fetch(`http://138.197.204.143/api/empresas/${id}`, {
+    fetch(`https://jflowsdev.duckdns.org/api/empresas/${id}`, {
       method: "DELETE",
     }).then(fetchEmpresas);
   };
