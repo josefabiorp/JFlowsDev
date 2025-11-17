@@ -7,7 +7,7 @@ import controlImage from "../assets/control.svg";
 import { useUser } from "./hooks/UserContext";
 import { usePermisos } from "./hooks/usePermisos";
 
-const API_URL = "http://138.197.204.143/api";
+const API_URL = "https://jflowsdev.duckdns.org/api";
 
 export function Sidebar({ logout }) {
     const [open, setOpen] = useState(true);
