@@ -16,7 +16,7 @@ import { AppModal } from "./AppModal.jsx";
 export function MantenimientoUsuarios() {
   const { token, user } = useUser();
   const { logout } = useAccountManagement();
-  const API_URL = "http://138.197.204.143/api";
+  const API_URL = "https://jflowsdev.duckdns.org/api";
 
   // Estados principales
   const [usuarios, setUsuarios] = useState([]);
