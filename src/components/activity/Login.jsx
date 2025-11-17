@@ -21,7 +21,7 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://138.197.204.143/api/login", {
+      const response = await fetch("https://jflowsdev.duckdns.org/login/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
