@@ -39,7 +39,7 @@ import toast from "react-hot-toast";
 import "../../index.css";
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-const API_URL = "http://138.197.204.143/api";
+const API_URL = "https://jflowsdev.duckdns.org/api";
 
 // -----------------------------------------------------
 // Helpers generales
