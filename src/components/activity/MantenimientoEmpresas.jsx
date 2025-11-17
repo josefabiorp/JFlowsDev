@@ -61,7 +61,7 @@ export function MantenimientoEmpresas() {
   // FETCH EMPRESAS
   // -----------------------------------------------------------
   const fetchEmpresas = () => {
-    fetch("http://138.197.204.143/api/empresas")
+    fetch("https://jflowsdev.duckdns.org/api/empresas")
       .then((res) => res.json())
       .then((data) => {
         setEmpresas(data);
