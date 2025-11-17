@@ -7,7 +7,7 @@ import { useUser } from "../hooks/UserContext.jsx";
 import { useAccountManagement } from "../hooks/useAccountManagement.js";
 import { usePoliticas } from "../hooks/usePoliticas.js";
 
-const API_URL = "http://138.197.204.143/api";
+const API_URL = "https://jflowsdev.duckdns.org/api";
 
 export function PoliticasEmpresa() {
   const { user, token } = useUser();
