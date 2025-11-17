@@ -1,266 +1,288 @@
-import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import "../../index.css";
-import { Header } from '../Header.jsx';
-import { Footer } from '../Footer.jsx';
-import { MantenimientoEmpresas } from './MantenimientoEmpresas.jsx';
-
-
+import { Header } from "../Header.jsx";
+import { Footer } from "../Footer.jsx";
+import toast from "react-hot-toast";
 
 export function Register() {
   const [formData, setFormData] = useState({
-    nombre: '',
-    email: '',
-    cedula: '',
-    
-    role: 'admin',
-   
-    password: '',
-    password_confirmation: '',
+    nombre: "",
+    email: "",
+    cedula: "",
+    role: "admin",
+    password: "",
+    password_confirmation: "",
     image: null,
-    empresa_id: '' // Nuevo estado para el id de la empresa
+    empresa_id: "",
   });
 
   const [errors, setErrors] = useState({});
-  const [success, setSuccess] = useState('');
-  const [cedulaEmpresaStatus, setCedulaEmpresaStatus] = useState(null);
-  const [isValidatingCedula, setIsValidatingCedula] = useState(false);
- 
-  const [empresas, setEmpresas] = useState([]); // Estado para las empresas
-    
-const navigate = useNavigate();
+  const [empresas, setEmpresas] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  
+  const navigate = useNavigate();
 
-
-
+  /* ================================
+   *  CARGAR EMPRESAS
+   * ================================ */
   useEffect(() => {
-    // Función para obtener las empresas
     const fetchEmpresas = async () => {
       try {
-        const response = await fetch('http://managersyncbdf.test/api/empresas'); // Asegúrate de que esta URL sea correcta
-        if (!response.ok) {
-          throw new Error('Error al cargar las empresas');
-        }
-        const data = await response.json();
-        setEmpresas(data); // Asumimos que la respuesta es un array de empresas
-      } catch (error) {
-        console.error('Error al obtener empresas:', error);
+        
+        const res = await fetch("http://138.197.204.143/api/empresas");
+        if (!res.ok) throw new Error("Error al cargar empresas");
+        const data = await res.json();
+        setEmpresas(data);
+      } catch (err) {
+        toast.error("No se pudieron cargar las empresas");
+        console.error(err);
       }
     };
-
-    fetchEmpresas(); // Llamamos a la función al montar el componente
+    fetchEmpresas();
   }, []);
 
-
-  
-  const handleChange = (event) => {
-    const { id, value, type, files } = event.target;
-    setFormData({
-      ...formData,
-      [id]: type === 'file' ? files[0] : value
-    });
+  /* ================================
+   *  MANEJADORES
+   * ================================ */
+  const handleChange = (e) => {
+    const { id, value, type, files } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [id]: type === "file" ? files[0] : value,
+    }));
   };
 
-  
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
     if (formData.password !== formData.password_confirmation) {
-      setErrors({ password_confirmation: 'Las contraseñas no coinciden' });
+      setErrors({ password_confirmation: "Las contraseñas no coinciden" });
+      setIsSubmitting(false);
       return;
     }
 
     const formDataToSend = new FormData();
     for (const key in formData) {
-      formDataToSend.append(key === 'image' ? 'profile_image' : key, formData[key]);
+      formDataToSend.append(
+        key === "image" ? "profile_image" : key,
+        formData[key]
+      );
     }
 
     try {
-      const response = await fetch('http://managersyncbdf.test/api/register', {
-        method: 'POST',
-        body: formDataToSend
+      const res = await fetch("http://138.197.204.143/api/register", {
+        method: "POST",
+        body: formDataToSend,
       });
 
-      if (!response.ok) {
-        const data = await response.json();
+      const data = await res.json();
+
+      if (!res.ok) {
         setErrors(data.errors || {});
+        toast.error("Ocurrió un error al registrar el usuario");
+        setIsSubmitting(false);
         return;
       }
 
-      setSuccess('Usuario registrado correctamente.');
-      setTimeout(() => {
-        navigate('/LogIn');
-      }, 2000);
-    } catch (error) {
-      console.error('Error:', error.message);
+      toast.success("Usuario registrado correctamente 🎉");
+      setTimeout(() => navigate("/LogIn"), 2000);
+    } catch (err) {
+      toast.error("Error de conexión con el servidor");
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-
-
+  /* ================================
+   *  UI
+   * ================================ */
   return (
     <>
-    <Header />
-    <div className="bg-slate-300 w-screen max-h-full pb-20">
-      <div className="mx-auto max-w-2xl">
-        <h1 className="font-bold lg:text-5xl text-4xl text-center py-20">¡Bienvenido(a)!</h1>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400 flex flex-col items-center justify-center py-16 px-4">
+        <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 p-8 transition-all hover:shadow-sky-200">
+          <h1 className="text-4xl font-bold text-center text-sky-900 mb-2">
+            ¡Bienvenido(a)!
+          </h1>
+          <p className="text-center text-gray-600 mb-8">
+            Registra tu cuenta de administrador para comenzar
+          </p>
 
-          <form className="rounded-xl max-w-56 mx-auto mb-5 bg-white p-3" onSubmit={handleSubmit}>
-            {success && <p className="text-cyan-600 mt-2">{success}</p>}
-
-            {errors.email && <p className="text-pink-700">{errors.email[0]}</p>}
-            {errors.cedula && <p className="text-pink-700">{errors.cedula[0]}</p>}
-            {errors.password_confirmation && <p className="text-pink-700">{errors.password_confirmation}</p>}
-
-            <div className="mb-2">
-              <label htmlFor="nombre" className="block mb-2 ml-0.5 text-sm font-medium text-gray-900">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Nombre */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">
                 Nombre de usuario
               </label>
               <input
                 type="text"
                 id="nombre"
-                className="shadow-sm mb-5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-slate-500 focus:border-slate-500 block w-full p-2.5"
-                placeholder="Nombre"
                 value={formData.nombre}
                 onChange={handleChange}
                 required
+                className="mt-1 w-full p-2.5 rounded-md border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-sky-600 focus:border-sky-600 transition-all"
+                placeholder="Nombre completo"
               />
+              {errors.nombre && (
+                <p className="text-pink-700 text-sm mt-1">{errors.nombre[0]}</p>
+              )}
             </div>
 
-            <div className="mb-2">
-              <label htmlFor="email" className="block mb-2 ml-0.5 text-sm font-medium text-gray-900 dark:text-white">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">
                 Correo electrónico
               </label>
               <input
                 type="email"
                 id="email"
-                className="shadow-sm mb-5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-slate-500 focus:border-slate-500 block w-full p-2.5"
-                placeholder="nombre@email.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
+                className="mt-1 w-full p-2.5 rounded-md border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-sky-600 focus:border-sky-600 transition-all"
+                placeholder="nombre@email.com"
               />
+              {errors.email && (
+                <p className="text-pink-700 text-sm mt-1">{errors.email[0]}</p>
+              )}
             </div>
 
-            <div className="mb-2">
-              <label htmlFor="cedula" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+            {/* Cédula */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">
                 Cédula de identidad
               </label>
               <input
                 type="text"
                 id="cedula"
-                className="shadow-sm mb-5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-slate-500 focus:border-slate-500 block w-full p-2.5"
-                placeholder="Cédula"
                 value={formData.cedula}
                 onChange={handleChange}
                 required
+                className="mt-1 w-full p-2.5 rounded-md border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-sky-600 focus:border-sky-600 transition-all"
+                placeholder="Cédula"
               />
+              {errors.cedula && (
+                <p className="text-pink-700 text-sm mt-1">{errors.cedula[0]}</p>
+              )}
             </div>
 
-
-          <label
-                htmlFor="empresa"
-                className="block mt-4 text-sm font-medium text-red-900"
-              >
-                Debe registrar una empresa para registrar usuario
+            {/* Empresa */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">
+                Empresa
               </label>
-            <button
-              type="button"
-              onClick={() => navigate("/MantenimientoEmpresas")}
-              className="mt-4 w-full text-sm px-5 mb-4 py-2.5 text-center font-medium text-white bg-sky-900 rounded-xl hover:bg-indigo-900 focus:ring-4 focus:outline-none focus:ring-blue-200"
-            >
-              Ir a modulo de Empresas
-            </button>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-red-700">
+                  Debe tener una empresa registrada para crear usuarios
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigate("/MantenimientoEmpresas")}
+                  className="text-sm text-blue-600 underline hover:text-blue-800 transition"
+                >
+                  Registrar empresa
+                </button>
+              </div>
 
-<div className="mb-2">
-              <label htmlFor="empresa_id" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Seleccionar Empresa
-              </label>
               <select
                 id="empresa_id"
-                className="shadow-sm mb-5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-slate-500 focus:border-slate-500 block w-full p-2.5"
                 value={formData.empresa_id}
                 onChange={handleChange}
                 required
+                className="w-full p-2.5 border border-gray-300 rounded-md bg-gray-50 focus:ring-2 focus:ring-sky-600 focus:border-sky-600 transition"
               >
                 <option value="">Seleccione una empresa</option>
-                {empresas.map(empresa => (
+                {empresas.map((empresa) => (
                   <option key={empresa.id} value={empresa.id}>
-                    {empresa.nombre} {/* Cambia 'nombre' por el campo que quieras mostrar */}
+                    {empresa.nombre}
                   </option>
                 ))}
               </select>
-
-
-
-
-
-    
             </div>
 
-
-
-
-
-
-            
-
-            <div className="mb-2">
-              <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+            {/* Contraseña */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">
                 Contraseña
               </label>
               <input
                 type="password"
                 id="password"
-                className="shadow-sm mb-5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-slate-500 focus:border-slate-500 block w-full p-2.5"
-                placeholder="Contraseña"
                 value={formData.password}
                 onChange={handleChange}
                 required
+                className="mt-1 w-full p-2.5 rounded-md border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-sky-600 focus:border-sky-600 transition-all"
+                placeholder="Contraseña"
               />
             </div>
 
-            <div className="mb-2">
-              <label htmlFor="password_confirmation" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+            {/* Confirmar contraseña */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">
                 Confirmar contraseña
               </label>
               <input
                 type="password"
                 id="password_confirmation"
-                className="shadow-sm mb-5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-slate-500 focus:border-slate-500 block w-full p-2.5"
-                placeholder="Confirmar contraseña"
                 value={formData.password_confirmation}
                 onChange={handleChange}
                 required
+                className="mt-1 w-full p-2.5 rounded-md border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-sky-600 focus:border-sky-600 transition-all"
+                placeholder="Confirmar contraseña"
               />
+              {errors.password_confirmation && (
+                <p className="text-pink-700 text-sm mt-1">
+                  {errors.password_confirmation}
+                </p>
+              )}
             </div>
 
-            <div className="mb-2">
-              <label htmlFor="image" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+            {/* Imagen */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700">
                 Imagen de perfil
               </label>
               <input
                 type="file"
-                id="profile_image"
-                className="shadow-sm mb-5  text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
-                  file:py-2 file:px-4 file:-ml-2
-                  file:rounded-full file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-sky-50 file:text-sky-800
-                  hover:file:bg-sky-100"
+                id="image"
                 accept="image/*"
                 onChange={handleChange}
+                className="mt-1 block w-full text-sm text-gray-700
+                file:mr-3 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-sky-50 file:text-sky-800
+                hover:file:bg-sky-100 cursor-pointer"
               />
             </div>
 
+            {/* Botón */}
             <button
               type="submit"
-              className="mt-2 w-full text-sm px-5 py-2.5 text-center font-medium text-white bg-sky-900 rounded-xl hover:bg-indigo-900 focus:ring-4 focus:outline-none focus:ring-blue-200">
-              Registrarse
+              disabled={isSubmitting}
+              className={`w-full py-3 mt-4 font-semibold rounded-lg text-white text-lg transition-all
+              ${
+                isSubmitting
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-sky-700 hover:bg-sky-800 shadow-md hover:shadow-lg"
+              }`}
+            >
+              {isSubmitting ? "Registrando..." : "Registrarse"}
             </button>
           </form>
+
+          <p className="text-center text-sm text-gray-600 mt-6">
+            ¿Ya tienes una cuenta?{" "}
+            <button
+              onClick={() => navigate("/LogIn")}
+              className="text-sky-700 hover:text-sky-900 font-semibold underline transition"
+            >
+              Iniciar sesión
+            </button>
+          </p>
         </div>
       </div>
       <Footer />

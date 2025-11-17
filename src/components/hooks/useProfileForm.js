@@ -6,6 +6,8 @@ export const useProfileForm = (user) => {
     nombre: '',
     email: '',
     cedula: '',
+    sucursal_id: null,
+
     role: ''
   });
 

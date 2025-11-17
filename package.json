@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+"tree": "tree "
+
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.0.0",
@@ -17,9 +19,14 @@
     "html2pdf.js": "^0.10.2",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",
+    "leaflet": "^1.9.4",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.6.0",
+    "react-icons": "^5.5.0",
+    "react-leaflet": "^4.2.1",
+    "react-qr-scanner": "^1.0.0-alpha.11",
     "react-router-dom": "^6.26.1",
     "react-router-hash-link": "^2.4.3",
     "react-svg": "^16.1.34",

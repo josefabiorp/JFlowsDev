@@ -1,259 +1,378 @@
-import { useState, useEffect } from 'react';
-import { Header } from '../Header.jsx';
-import { Footer } from '../Footer.jsx';
-import { useAccountManagement } from '../hooks/useAccountManagement.js';
-import { Sidebar } from '../Sidebar.jsx';
-import { useUser } from '../hooks/UserContext';
-import { Loading } from './Loading.jsx';
+import { useState, useEffect } from "react";
+import { Header } from "../Header.jsx";
+import { Footer } from "../Footer.jsx";
+import { Sidebar } from "../Sidebar.jsx";
+import { useAccountManagement } from "../hooks/useAccountManagement.js";
+import { useUser } from "../hooks/UserContext";
+import { Loading } from "./Loading.jsx";
+import toast from "react-hot-toast";
+
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+import { AppModal } from "./AppModal.jsx";
 
 export function MantenimientoUsuarios() {
-  const { token, user } = useUser(); // Obtener el token y la información del usuario del contexto
-  const [formData, setFormData] = useState({
-    nombre: '',
-    email: '',
-    cedula: '',
-    empresa_id: user?.empresa_id || '', // Cargar cédula de la empresa del usuario
-   
-    role: '', // Cambié el valor inicial a una cadena vacía para que el usuario seleccione
-    password: '',
-    password_confirmation: ''
-  });
+  const { token, user } = useUser();
+  const { logout } = useAccountManagement();
+  const API_URL = "http://138.197.204.143/api";
+
+  // Estados principales
   const [usuarios, setUsuarios] = useState([]);
+  const [sucursales, setSucursales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingUsuario, setEditingUsuario] = useState(null);
   const [errors, setErrors] = useState({});
-  const { logout } = useAccountManagement();
 
-  // Función para obtener usuarios
-  // Función para obtener usuarios
-const fetchUsuarios = async () => {
-  try {
-    const response = await fetch('http://managersyncbdf.test/api/usuarios/all', {
-      headers: {
-        'Authorization': `Bearer ${token}` // Usar el token del contexto
-      }
-    });
+  // Formulario de usuario
+  const [formData, setFormData] = useState({
+    nombre: "",
+    email: "",
+    cedula: "",
+    empresa_id: user?.empresa_id || "",
+    sucursal_id: "",
+    role: "",
+    password: "",
+    password_confirmation: "",
+  });
 
-    if (!response.ok) {
-      throw new Error('Error al obtener usuarios');
-    }
+  // Modal de sucursal (usa AppModal)
+  const [showModal, setShowModal] = useState(false);
+  const [newSucursal, setNewSucursal] = useState({
+    nombre: "",
+    direccion: "",
+    latitud: "",
+    longitud: "",
+    empresa_id: user?.empresa_id || "",
+  });
 
-    const data = await response.json();
-    // Filtrar usuarios que coincidan con el `empresa_id` del usuario logueado
-    const filteredUsuarios = data.filter(usuario => usuario.empresa_id === user.empresa_id);
-    setUsuarios(filteredUsuarios);
-  } catch (error) {
-    console.error('Error fetching usuarios:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+  /** ======================
+   *  SINCRONIZAR EMPRESA LOGUEADA
+   * ====================== */
   useEffect(() => {
-    fetchUsuarios();
-  }, [token]); // Agregar token como dependencia
+    if (user?.empresa_id) {
+      setNewSucursal((prev) => ({
+        ...prev,
+        empresa_id: user.empresa_id,
+      }));
+    }
+  }, [user]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prevData => ({ ...prevData, [name]: value }));
+  /** ======================
+   *  CARGA DE DATOS
+   * ====================== */
+  useEffect(() => {
+    if (!token) return;
+    fetchUsuarios();
+    fetchSucursales();
+  }, [token]);
+
+  const fetchUsuarios = async () => {
+    try {
+      const res = await fetch(`${API_URL}/usuarios/con-sucursal`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Error al obtener usuarios");
+      const data = await res.json();
+      setUsuarios(data.filter((u) => u.empresa_id === user?.empresa_id));
+    } catch (err) {
+      toast.error("No se pudieron cargar los usuarios");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Función para manejar el envío del formulario
+  const fetchSucursales = async () => {
+    try {
+      const res = await fetch(`${API_URL}/sucursales`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Error al obtener sucursales");
+      const data = await res.json();
+      setSucursales(data.filter((s) => s.empresa_id === user?.empresa_id));
+    } catch (err) {
+      toast.error("No se pudieron cargar las sucursales");
+      console.error(err);
+    }
+  };
+
+  /** ======================
+   *  CRUD USUARIOS
+   * ====================== */
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (formData.password !== formData.password_confirmation) {
-      setErrors({ password_confirmation: 'Las contraseñas no coinciden' });
+      setErrors({ password_confirmation: "Las contraseñas no coinciden" });
       return;
     }
 
     try {
-      const response = await fetch('http://managersyncbdf.test/api/register', {
-        method: 'POST',
+      const res = await fetch(`${API_URL}/register`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Usar el token del contexto
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          empresa_id: user?.empresa_id || formData.empresa_id || 1,
+          sucursal_id: formData.sucursal_id || 1,
+        }),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
+      const data = await res.json();
+      if (!res.ok) {
         setErrors(data.errors || {});
+        toast.error("Error al registrar el usuario");
         return;
       }
-
-      fetchUsuarios(); // Refetch usuarios después de agregar
+      toast.success("Usuario registrado con éxito");
+      fetchUsuarios();
       resetForm();
-    } catch (error) {
-      console.error('Error:', error);
+    } catch (err) {
+      toast.error("Error de conexión con el servidor");
+      console.error(err);
     }
   };
 
-  // Función para manejar la eliminación de un usuario
+ const handleUpdate = async (e) => {
+  e.preventDefault();
+
+  try {
+    const res = await fetch(`${API_URL}/admin/usuarios/${editingUsuario}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        nombre: formData.nombre,
+        email: formData.email,
+        cedula: formData.cedula,
+        empresa_id: user.empresa_id,
+        sucursal_id: formData.sucursal_id,
+        role: formData.role,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      toast.error("Error al actualizar el usuario");
+      console.log(data);
+      return;
+    }
+
+    toast.success("Usuario actualizado correctamente");
+    fetchUsuarios();
+    resetForm();
+  } catch (err) {
+    toast.error("No se pudo conectar con el servidor");
+    console.error(err);
+  }
+};
+
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm('¿Estás seguro de que quieres eliminar este usuario?');
-    if (!confirmDelete) return; // Cancelar si el usuario no confirma
-
+    if (!window.confirm("¿Seguro que deseas eliminar este usuario?")) return;
     try {
-      const response = await fetch(`http://managersyncbdf.test/api/usuarios/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}` // Usar el token del contexto
-        }
+      const res = await fetch(`${API_URL}/usuarios/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (response.ok) {
-        fetchUsuarios(); // Refetch usuarios después de eliminar
-      } else {
-        console.error('Error al eliminar el usuario', response.statusText);
+      if (res.ok) {
+        toast.success("Usuario eliminado");
+        fetchUsuarios();
       }
-    } catch (error) {
-      console.error('Error:', error);
+    } catch (err) {
+      toast.error("Error al eliminar el usuario");
+      console.error(err);
     }
   };
 
-  // Función para manejar la edición de un usuario
   const handleEdit = (usuario) => {
     setFormData({
       nombre: usuario.nombre,
       email: usuario.email,
       cedula: usuario.cedula,
-      empresa_id: user?.empresa_id || '', // Resetear id de empresa
-     
+      empresa_id: user?.empresa_id || "",
+      sucursal_id: usuario.sucursal_id || "",
       role: usuario.role,
-      password: '',
-      password_confirmation: ''
+      password: "",
+      password_confirmation: "",
     });
     setEditingUsuario(usuario.id);
   };
 
-  // Función para manejar la actualización de un usuario
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-
-    const updatedUsuario = { ...formData };
-
-    try {
-      const response = await fetch(`http://managersyncbdf.test/api/usuarios/${editingUsuario}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Usar el token del contexto
-        },
-        body: JSON.stringify(updatedUsuario),
-      });
-
-      if (response.ok) {
-        fetchUsuarios(); // Refetch usuarios después de actualizar
-        resetForm();
-      } else {
-        console.error('Error al actualizar el usuario', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
-  // Función para restablecer el formulario
   const resetForm = () => {
     setFormData({
-      nombre: '',
-      email: '',
-      cedula: '',
-      empresa_id: user?.empresa_id || '', // Resetear id de empresa
-     
-      role: '', // Cambié el valor inicial a una cadena vacía
-      password: '',
-      password_confirmation: ''
+      nombre: "",
+      email: "",
+      cedula: "",
+      empresa_id: user?.empresa_id || "",
+      sucursal_id: "",
+      role: "",
+      password: "",
+      password_confirmation: "",
     });
     setEditingUsuario(null);
     setErrors({});
   };
 
-  // Mostrar cargando mientras se obtienen usuarios
-  if (loading) return <div className='duration-700'> <Loading/></div>;
+  /** ======================
+   *  CRUD SUCURSAL (MODAL)
+   * ====================== */
+  const handleSucursalChange = (e) => {
+    const { name, value } = e.target;
+    setNewSucursal((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSucursalSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!user?.empresa_id) {
+      toast.error("No se detectó empresa asociada al usuario logueado.");
+      return;
+    }
+
+    const sucursalData = {
+      ...newSucursal,
+      empresa_id: user.empresa_id,
+      latitud: newSucursal.latitud
+        ? parseFloat(newSucursal.latitud)
+        : null,
+      longitud: newSucursal.longitud
+        ? parseFloat(newSucursal.longitud)
+        : null,
+    };
+
+    try {
+      const res = await fetch(`${API_URL}/sucursales`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(sucursalData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Error al crear sucursal:", data);
+        toast.error("Error al registrar la sucursal");
+        return;
+      }
+
+      toast.success("Sucursal registrada con éxito");
+      await fetchSucursales();
+      setShowModal(false);
+      setNewSucursal({
+        nombre: "",
+        direccion: "",
+        latitud: "",
+        longitud: "",
+        empresa_id: user.empresa_id,
+      });
+    } catch (err) {
+      toast.error("Error de conexión con el servidor");
+      console.error(err);
+    }
+  };
+
+  /** ======================
+   *  UI
+   * ====================== */
+  if (loading)
+    return (
+      <div className="duration-700">
+        <Loading />
+      </div>
+    );
 
   return (
     <>
       <Header />
-      <div className="bg-slate-300 flex w-screen h-max">
-        <div className='basis-1/4'>
+      <div className="flex flex-col lg:flex-row bg-slate-200 min-h-screen">
+        <div className="w-full lg:w-1/4">
           <Sidebar logout={logout} />
         </div>
 
-        <div className="col-span-7 flex py-16">
-          <div className="relative overflow-x-auto shadow-md sm:rounded-lg max-w-full pt-12 -mt-7 p-6 rounded-xl mx-auto bg-white">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6 -mt-4">{editingUsuario ? 'Actualizar Usuario' : 'Registrar Usuario'}</h1>
-            <form onSubmit={editingUsuario ? handleUpdate : handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-gray-700 font-semibold">Nombre</label>
-                <input
-                  type="text"
-                  name="nombre"
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-700"
-                  value={formData.nombre}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-700"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold">Cédula</label>
-                <input
-                  type="text"
-                  name="cedula"
-                  className="w-full mt-1 p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-700"
-                  value={formData.cedula}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div>
-  <label className="block text-gray-700 font-semibold">Cédula Empresa</label>
-  <input
-    type="text"
-    name="cedula_empresa"
-    className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-    value={formData.cedula_empresa}
-    readOnly
-  />
-</div>
+        <div className="flex-1 p-6 lg:p-10">
+          <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-8 transition-all duration-300 hover:shadow-xl">
+            <h1 className="text-3xl font-bold text-sky-900 mb-8 text-center">
+              {editingUsuario ? "Actualizar Usuario" : "Registrar Usuario"}
+            </h1>
 
-<div>
-  <label className="block text-gray-700 font-semibold">Empresa</label>
-  <input
-    type="text"
-    name="empresa"
-    className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-    value={formData.empresa}
-    readOnly
-  />
-</div>
+            <form
+              onSubmit={editingUsuario ? handleUpdate : handleSubmit}
+              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            >
+              <Input
+                label="Nombre"
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleChange}
+              />
+              <Input
+                label="Email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+              />
+              <Input
+                label="Cédula"
+                name="cedula"
+                value={formData.cedula}
+                onChange={handleChange}
+              />
 
-              <div className="mb-2">
-                <label htmlFor="role" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+              {/* Selector de Sucursal */}
+              <div>
+                <label className="flex justify-between items-center font-semibold text-gray-700">
+                  <span>Sucursal</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(true)}
+                    className="text-sm text-blue-600 underline hover:text-blue-800"
+                  >
+                    Registrar nueva
+                  </button>
+                </label>
+                <select
+                  name="sucursal_id"
+                  value={formData.sucursal_id}
+                  onChange={handleChange}
+                  className="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-sky-700"
+                  required
+                >
+                  <option value="">Seleccione una sucursal</option>
+                  {sucursales.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-gray-700">
                   Rol
                 </label>
                 <select
-                  id="role"
-                  name="role" // Asegúrate de incluir el atributo name
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-700 block w-full p-2.5"
+                  name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  required>
-                  <option value="">Seleccione un rol</option> {/* Opción para seleccionar un rol */}
+                  required
+                  className="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-sky-700"
+                >
+                  <option value="">Seleccione un rol</option>
                   <option value="admin">Administrador</option>
                   <option value="contador">Contador</option>
                   <option value="empleado">Empleado</option>
@@ -262,78 +381,246 @@ const fetchUsuarios = async () => {
 
               {!editingUsuario && (
                 <>
-                  <div>
-                    <label className="block text-gray-700 font-semibold">Contraseña</label>
-                    <input
-                      type="password"
-                      name="password"
-                      className="w-full mt-1 p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-700"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold">Confirmar Contraseña</label>
-                    <input
-                      type="password"
-                      name="password_confirmation"
-                      className="w-full mt-1 p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-700"
-                      value={formData.password_confirmation}
-                      onChange={handleChange}
-                      required
-                    />
-                    {errors.password_confirmation && <p className="text-pink-700">{errors.password_confirmation}</p>}
-                  </div>
+                  <Input
+                    label="Contraseña"
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    autoComplete="new-password"
+                  />
+                  <Input
+                    label="Confirmar Contraseña"
+                    type="password"
+                    name="password_confirmation"
+                    value={formData.password_confirmation}
+                    onChange={handleChange}
+                    autoComplete="new-password"
+                    error={errors.password_confirmation}
+                  />
                 </>
               )}
-              <button
-                type="submit"
-                className="w-full mt-4 font-medium text-white bg-sky-900  hover:bg-indigo-900 focus:ring-4 focus:outline-none focus:ring-blue-200 p-2 rounded-md shadow-sm "
-              >
-                {editingUsuario ? 'Actualizar Usuario' : 'Registrar Usuario'}
-              </button>
+
+              <div className="md:col-span-2">
+                <button
+                  type="submit"
+                  className="w-full bg-sky-800 hover:bg-indigo-900 text-white p-3 rounded-md font-medium transition-all"
+                >
+                  {editingUsuario ? "Actualizar Usuario" : "Registrar Usuario"}
+                </button>
+              </div>
             </form>
 
-            <h2 className="text-xl font-bold mt-8">Usuarios Registrados</h2>
-            <table className="min-w-full mt-4">
-              <thead>
-                <tr>
-                  <th className="border px-4 py-2">ID</th>
-                  <th className="border px-4 py-2">Nombre</th>
-                  <th className="border px-4 py-2">Email</th>
-                  <th className="border px-4 py-2">Rol</th>
-                  <th className="border px-4 py-2">ID de empresa</th>
-                  <th className="border px-4 py-2">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usuarios.map(usuario => (
-                  <tr key={usuario.id}>
-                    <td className="border px-4 py-2">{usuario.id}</td>
-                    <td className="border px-6 py-2">{usuario.nombre}</td>
-                    <td className="border px-6 py-2">{usuario.email}</td>
-                    <td className="border px-3 py-2">{usuario.role}</td>
-                    <td className="border px-1 py-2">
-                      <button
-                        onClick={() => handleEdit(usuario)}
-                        className="text-sm text-center font-medium mt-1 px-6 py-1 rounded-xl bg-gray-50 text-gray-600 hover:bg-slate-200 hover:text-sky-800 transition duration-200">
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(usuario.id)}
-                        className="text-sm text-center font-medium mt-1 px-6 py-1 rounded-xl gap-2 bg-gray-50 text-gray-600 hover:bg-slate-200 hover:text-sky-800 transition duration-200">
-                        Eliminar
-                      </button>
-                    </td>
+            {/* Tabla de usuarios */}
+            <h2 className="text-xl font-bold mt-10 mb-4 text-gray-800">
+              Usuarios Registrados
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full border border-gray-200 text-sm rounded-lg overflow-hidden">
+                <thead className="bg-gray-100 text-gray-700 uppercase">
+                  <tr>
+                    {[
+                      "ID",
+                      "Nombre",
+                      "Email",
+                      "Rol",
+                      "Sucursal",
+                      "Acciones",
+                    ].map((h) => (
+                      <th key={h} className="border px-4 py-2 text-left">
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {usuarios.map((u) => (
+                    <tr
+                      key={u.id}
+                      className="hover:bg-slate-50 transition"
+                    >
+                      <td className="border px-4 py-2">{u.id}</td>
+                      <td className="border px-4 py-2">{u.nombre}</td>
+                      <td className="border px-4 py-2">{u.email}</td>
+                      <td className="border px-4 py-2">{u.role}</td>
+                      <td className="border px-4 py-2">
+                        {u.sucursal?.nombre || "—"}
+                      </td>
+                      <td className="border px-4 py-2 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleEdit(u)}
+                          className="px-3 py-1 bg-gray-100 hover:bg-slate-200 text-gray-700 rounded-md"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(u.id)}
+                          className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-md"
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* MODAL SUCURSAL con AppModal */}
+      <AppModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="🏢 Registrar Nueva Sucursal"
+        size="md"
+      >
+        <form onSubmit={handleSucursalSubmit} className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-5">
+            <Input
+              label="Nombre"
+              name="nombre"
+              value={newSucursal.nombre}
+              onChange={handleSucursalChange}
+            />
+            <Input
+              label="Dirección"
+              name="direccion"
+              value={newSucursal.direccion}
+              onChange={handleSucursalChange}
+            />
+          </div>
+
+          <Input
+            label="Empresa asociada"
+            name="empresa_id"
+            value={newSucursal.empresa_id || user?.empresa_id || ""}
+            onChange={() => {}}
+            type="text"
+            readOnly
+          />
+
+          <div>
+            <p className="text-sm text-gray-600 mb-2">
+              Hacé clic en el mapa para definir la ubicación de la sucursal.
+            </p>
+            <div className="rounded-xl overflow-hidden border border-gray-300 shadow-inner">
+              <MapSelector
+                lat={newSucursal.latitud}
+                lng={newSucursal.longitud}
+                setNewSucursal={setNewSucursal}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-4 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="px-5 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700 font-medium transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 rounded-lg bg-sky-700 hover:bg-sky-800 text-white font-semibold shadow-sm transition-all"
+            >
+              Guardar
+            </button>
+          </div>
+        </form>
+      </AppModal>
+
       <Footer />
     </>
+  );
+}
+
+/* ===========================
+ *  Subcomponente Input
+ * =========================== */
+function Input({
+  label,
+  name,
+  type = "text",
+  value,
+  onChange,
+  error,
+  autoComplete,
+  readOnly,
+}) {
+  return (
+    <div>
+      <label className="block font-semibold text-gray-700">{label}</label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        autoComplete={autoComplete}
+        placeholder={`Ingrese ${label.toLowerCase()}`}
+        readOnly={readOnly}
+        className={`w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-sky-700 ${
+          error ? "border-pink-500" : ""
+        } ${readOnly ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
+        required={!readOnly}
+      />
+      {error && <p className="text-pink-700 text-sm mt-1">{error}</p>}
+    </div>
+  );
+}
+
+/* ===========================
+ *  Subcomponente Mapa
+ * =========================== */
+function MapSelector({ lat, lng, setNewSucursal }) {
+  const defaultPosition = [
+    lat || 9.9281,
+    lng || -84.0907, // San José, CR como fallback
+  ];
+
+  const markerIcon = new L.Icon({
+    iconUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+    shadowUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+  });
+
+  const MapClickHandler = () => {
+    useMapEvents({
+      click(e) {
+        const { lat, lng } = e.latlng;
+        setNewSucursal((prev) => ({
+          ...prev,
+          latitud: lat.toFixed(6),
+          longitud: lng.toFixed(6),
+        }));
+      },
+    });
+    return null;
+  };
+
+  const hasCoords = lat && lng;
+  const markerPos = hasCoords
+    ? [parseFloat(lat), parseFloat(lng)]
+    : null;
+
+  return (
+    <MapContainer
+      center={defaultPosition}
+      zoom={8}
+      className="h-72 w-full rounded-lg"
+      scrollWheelZoom
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <MapClickHandler />
+      {markerPos && <Marker position={markerPos} icon={markerIcon} />}
+    </MapContainer>
   );
 }

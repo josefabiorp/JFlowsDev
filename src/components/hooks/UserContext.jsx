@@ -18,7 +18,7 @@ const UserProvider = ({ children }) => {
   
   // Agregar lógica para los roles
   const isAdmin = user?.role === 'admin';  // Verifica si el usuario es admin
-  const isEmpleado = user?.role === 'empleado'; // Verifica si el usuario es vendedor
+  const isEmpleado = user?.role === 'empleado'; // Verifica si el usuario es empleado
 
   useEffect(() => {
     if (user) {

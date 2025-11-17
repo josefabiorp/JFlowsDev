@@ -1,52 +1,58 @@
-import React, { useEffect, useState } from 'react'; 
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { useUser } from "../hooks/UserContext"; // Hook para manejar el estado del usuario
+
+import { useUser } from "../hooks/UserContext";
+
+// Páginas
 import { LoadingPage } from '../../LoadingPage.jsx';
 import { Login } from '../activity/Login.jsx';
 import { Register } from '../activity/Registro.jsx';
-import { Sidebar } from '../Sidebar.jsx';
 import { HomePage } from '../../HomePage.jsx';
-import { Registro_factura } from '../activity/Registro_factura.jsx';
-import { Reporte_general } from '../activity/Reporte_general.jsx';
-import { Ventas } from '../activity/Ventas.jsx';
-import { Compras } from '../activity/Compras.jsx';
 import { Settings } from '../activity/Settings.jsx';
 import { ResetPassword } from '../activity/ResetPassword.jsx';
 import { ForgotPassword } from '../activity/ForgotPassword.jsx';
-import { MantenimientoProductos } from '../activity/MantenimientoProductos.jsx';
+
+import { Sidebar } from '../Sidebar.jsx';
 import { MantenimientoUsuarios } from '../activity/MantenimientoUsuarios.jsx';
-import { MantenimientoClientes } from '../activity/MantenimientoClientes.jsx';
 import { EstadisticasFacturas } from '../activity/EstadisticasFacturas.jsx';
 import { MantenimientoEmpresas } from '../activity/MantenimientoEmpresas.jsx';
-import { MantenimientoProveedores } from '../activity/MantenimientoProveedores.jsx';
-import ProtectedRoute from './ProtectedRoute'; // Ajusta la ruta
-import { Detalle_facturas } from '../activity/Detalle_facturas.jsx';
-import { Punto_venta } from '../activity/Punto_venta.jsx';
-import { ConsultarCompras } from '../activity/ConsultarCompras.jsx';
-import { HistorialInventario } from '../activity/ConsultarProductos.jsx';
-// Ruta para redirigir si el usuario está logueado
+import { RegistroAsistencias } from '../activity/RegistroAsistencias.jsx';
+import { Descansos } from '../activity/Descansos.jsx';
+
+// 🔥 NUEVOS módulos incorporados
+import { Permisos } from '../activity/Permisos.jsx';
+import { PoliticasEmpresa } from '../activity/PoliticasEmpresa.jsx';
+
+// Protectores
+import ProtectedRoute from './ProtectedRoute';
+
+
+// ================================================
+// Rutas públicas (si ya está logueado → Settings)
+// ================================================
 function PublicRoute({ children }) {
-  const { user } = useUser(); // Hook para obtener usuario logueado
+  const { user } = useUser();
   return user ? <Navigate to="/Settings" /> : children;
 }
 
-// Ruta para proteger solo para admins
+
+// ================================================
+// Rutas solo para admins
+// ================================================
 function AdminRoute({ children }) {
-  const { isAdmin } = useUser(); // Verifica si el usuario es admin
+  const { isAdmin } = useUser();
   const [hasNoPermission, setHasNoPermission] = useState(false);
-  const [redirectToSettings, setRedirectToSettings] = useState(false);
+  const [redirect, setRedirect] = useState(false);
 
   useEffect(() => {
     if (!isAdmin) {
       setHasNoPermission(true);
-      const timer = setTimeout(() => {
-        setRedirectToSettings(true); // Establecer la redirección después de 5 segundos
-      }, 1000); // 5000 ms = 5 segundos
-      return () => clearTimeout(timer); // Limpiar el timer si el componente se desmonta
+      const timer = setTimeout(() => setRedirect(true), 1000);
+      return () => clearTimeout(timer);
     }
   }, [isAdmin]);
 
-  if (redirectToSettings) {
+  if (redirect) {
     return <Navigate to="/Settings" />;
   }
 
@@ -58,75 +64,97 @@ function AdminRoute({ children }) {
     );
   }
 
-  return isAdmin ? children : null; // Devuelve null si no hay permisos y no se ha redirigido
+  return isAdmin ? children : null;
 }
 
+
+// ================================================
+// ROUTER PRINCIPAL
+// ================================================
 export function RouteMain() {
   return (
     <Router>
       <Routes>
-        <Route path="/HomePage" element={<HomePage />} />
+
         <Route path="/" element={<LoadingPage />} />
+        <Route path="/HomePage" element={<HomePage />} />
+
+        {/* Login / Registro públicos */}
         <Route path="/LogIn" element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
+          <PublicRoute><Login /></PublicRoute>
         } />
+
         <Route path="/Registro" element={
-          <PublicRoute>
-            <Register />
-          </PublicRoute>
+          <PublicRoute><Register /></PublicRoute>
         } />
-        <Route path="/Sidebar" element={<ProtectedRoute><Sidebar /></ProtectedRoute>} />
-        <Route path="/Registro_factura" element={<Registro_factura />} />
-        <Route path="/Punto_venta" element={<ProtectedRoute><Punto_venta /></ProtectedRoute>} />
-        <Route path="/Detalle_facturas" element={<ProtectedRoute><Detalle_facturas /></ProtectedRoute>} />
-        <Route path="/Reporte_general" element={<Reporte_general />} />
-        <Route path="/Ventas" element={<Ventas />} />
-        <Route path="/Compras" element={<ProtectedRoute><AdminRoute><Compras /></AdminRoute>
-          </ProtectedRoute>} />
-        <Route path="/ConsultarCompras" element={<ConsultarCompras />} />
-        <Route path="/ConsultarProductos" element={<HistorialInventario/>} />
 
-        <Route path="/MantenimientoUsuarios" element={
-          <ProtectedRoute><AdminRoute>
-            <MantenimientoUsuarios /></AdminRoute>
+        {/* Recuperación */}
+        <Route path="/ResetPassword/:token" element={<ResetPassword />} />
+        <Route path="/ForgotPassword" element={<ForgotPassword />} />
 
-          </ProtectedRoute>} />
-
-
-
-          <Route path="/EstadisticasFacturas" element={
-          <ProtectedRoute><AdminRoute>
-            <EstadisticasFacturas /></AdminRoute>
-
-          </ProtectedRoute>} />
-        {/* Solo los administradores pueden acceder a MantenimientoProductos */}
-        <Route path="/MantenimientoProductos" element={
-         <ProtectedRoute><AdminRoute>
-            <MantenimientoProductos />
-          </AdminRoute></ProtectedRoute> 
+        {/* Sidebar suelto */}
+        <Route path="/Sidebar" element={
+          <ProtectedRoute><Sidebar /></ProtectedRoute>
         } />
-        <Route path="/MantenimientoProveedores" element={
-          <ProtectedRoute><AdminRoute>
-            <MantenimientoProveedores /> </AdminRoute>
-          </ProtectedRoute>} />
-        <Route path="/MantenimientoClientes" element={
+
+        {/* Asistencias */}
+        <Route path="/RegistroAsistencias" element={
+          <ProtectedRoute><RegistroAsistencias /></ProtectedRoute>
+        } />
+
+        {/* ================================
+            🔥 RUTA CORPORATIVA: PERMISOS
+        ================================ */}
+        <Route path="/Permisos" element={
           <ProtectedRoute>
-            <MantenimientoClientes />
-          </ProtectedRoute>} />
-          <Route path="/MantenimientoEmpresas" element={
-         <PublicRoute>
-            <MantenimientoEmpresas />
-          </PublicRoute>} />
-          
-        <Route path="/Settings" element={
-          <ProtectedRoute>
-            <Settings />
+            <Permisos />
           </ProtectedRoute>
         } />
-          <Route path="/ResetPassword/:token" element={<ResetPassword />} />
-        <Route path="/ForgotPassword" element={<ForgotPassword />} />  
+
+
+        {/* ================================
+            🔥 RUTA CORPORATIVA: POLÍTICAS
+            SOLO ADMINISTRADORES
+        ================================ */}
+        <Route path="/PoliticasEmpresa" element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <PoliticasEmpresa />
+            </AdminRoute>
+          </ProtectedRoute>
+        } />
+
+
+        {/* ================================
+            ADMIN ONLY
+        ================================ */}
+        <Route path="/MantenimientoUsuarios" element={
+          <ProtectedRoute><AdminRoute><MantenimientoUsuarios /></AdminRoute></ProtectedRoute>
+        } />
+
+        <Route path="/EstadisticasFacturas" element={
+          <ProtectedRoute><AdminRoute><EstadisticasFacturas /></AdminRoute></ProtectedRoute>
+        } />
+
+        {/* Empresas */}
+        <Route path="/MantenimientoEmpresas" element={
+          <PublicRoute><MantenimientoEmpresas /></PublicRoute>
+        } />
+
+        {/* Perfil */}
+        <Route path="/Settings" element={
+          <ProtectedRoute><Settings /></ProtectedRoute>
+        } />
+
+        {/* ================================
+            🔥 NUEVA RUTA: DESCANSOS
+        ================================ */}
+        <Route path="/Descansos" element={
+          <ProtectedRoute>
+            <Descansos />
+          </ProtectedRoute>
+        } />
+
       </Routes>
     </Router>
   );

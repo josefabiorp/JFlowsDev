@@ -29,7 +29,7 @@ export function CardLoadingPage({ image00, image01, image02, image03 }) {
           className='bg-white shadow-md p-4 rounded-md text-center content-center mb-7 lg:h-60 lg:w-40 w-full'>
           <img src={image00} alt="Card 1" className='h-32 w-32 object-cover mx-auto mb-4' />
           <h3 className='font-semibold lg:text-base text-2xl'>Rapidez</h3>
-          <p className='text-gray-600 lg:text-sm text-1xl'>para registrar ventas</p>
+          <p className='text-gray-600 lg:text-sm text-1xl'>Para un rendimiento óptimo</p>
         </motion.div>
 
         <motion.div 
@@ -40,7 +40,7 @@ export function CardLoadingPage({ image00, image01, image02, image03 }) {
         className='bg-white shadow-md p-4 rounded-md text-center content-center mb-7 lg:h-60 lg:w-40 w-full'>
           <img src={image01} alt="Card 2" className='h-32 w-32 object-cover mx-auto mb-4' />
           <h3 className='font-semibold lg:text-base text-2xl'>Eficiencia</h3>
-          <p className='text-gray-600 lg:text-sm text-1xl'>al manejar tus cuentas</p>
+          <p className='text-gray-600 lg:text-sm text-1xl'>Para una gestión inteligente</p>
         </motion.div>
 
         <motion.div 
@@ -51,7 +51,7 @@ export function CardLoadingPage({ image00, image01, image02, image03 }) {
         className='bg-white shadow-md p-4 rounded-md text-center content-center mb-7 lg:h-60 lg:w-40 w-full'>
           <img src={image02} alt="Card 3" className='h-32 w-32 object-cover mx-auto mb-4' />
           <h3 className='font-semibold lg:text-base text-2xl text-balance'>Organiza</h3>
-          <p className='text-gray-600 lg:text-sm text-1xl'>todos tus productos</p>
+          <p className='text-gray-600 lg:text-sm text-1xl'>Para poductividad continua </p>
         </motion.div>
 
         <motion.div 
@@ -62,7 +62,7 @@ export function CardLoadingPage({ image00, image01, image02, image03 }) {
         className='bg-white shadow-md p-4 rounded-md text-center content-center lg:mb-7 mb-24 lg:h-60 lg:w-40 w-full'>
           <img src={image03} alt="Card 4" className='h-32 lg:w-32 w-full object-cover mx-auto lg:mb-0 mb-4' />
           <h3 className='font-semibold lg:text-base text-2xl'>Usuarios</h3>
-          <p className='text-gray-600 lg:text-sm text-1xl'>para vender o administrar</p>
+          <p className='text-gray-600 lg:text-sm text-1xl'>Para un equipo conectado</p>
         </motion.div>
       
     </motion.div>

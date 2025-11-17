@@ -65,7 +65,7 @@ const Card = () => {
             al mes
         </motion.span>
         <p>
-            Adquiere nuestra licencia para empezar a organizar tus facturas
+            Adquiere nuestra licencia para empezar a controlar los empleados de tu empresa
         </p>
         </div>
         <Link to="/Registro" className="absolute bottom-8 left-4 right-4 z-20 rounded border-2 border-white bg-white py-2 text-center font-black uppercase text-neutral-800 backdrop-blur transition-colors hover:bg-sky-50 hover:text-indigo-800">

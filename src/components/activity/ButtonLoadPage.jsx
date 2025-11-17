@@ -5,9 +5,10 @@ import { motion } from "framer-motion";
 export function ButtonLoadingPage() {
   const navigate = useNavigate();
 
-  const handleClick = () => {
-    navigate("/Registro");
-  };
+const handleClick = () => {
+  navigate("/login");
+};
+
 
   return (
     <div className="mt-5">

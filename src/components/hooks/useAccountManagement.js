@@ -7,7 +7,7 @@ export const useAccountManagement = () => {
 
   const deleteAccount = async (token) => {
     try {
-      const response = await fetch('http://managersyncbdf.test/api/delete-account', {
+      const response = await fetch('http://138.197.204.143/api/delete-account', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
