@@ -7,7 +7,7 @@ import { useAccountManagement } from "../hooks/useAccountManagement.js";
 import { usePermisos } from "../hooks/usePermisos.js";
 import { AppModal } from "./AppModal.jsx";
 
-const API_URL = "http://138.197.204.143/api";
+const API_URL = "https://jflowsdev.duckdns.org/api";
 
 export function Permisos() {
   const { token, user, isAdmin } = useUser();
