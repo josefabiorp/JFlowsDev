@@ -30,7 +30,7 @@ export function Register() {
     const fetchEmpresas = async () => {
       try {
         
-        const res = await fetch("http://138.197.204.143/api/empresas");
+        const res = await fetch("https://jflowsdev.duckdns.org/api/empresas");
         if (!res.ok) throw new Error("Error al cargar empresas");
         const data = await res.json();
         setEmpresas(data);
@@ -72,7 +72,7 @@ export function Register() {
     }
 
     try {
-      const res = await fetch("http://138.197.204.143/api/register", {
+      const res = await fetch("https://jflowsdev.duckdns.org/api/register", {
         method: "POST",
         body: formDataToSend,
       });
