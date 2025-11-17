@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import { useUser } from "./hooks/UserContext";
-import { Clock } from "./activity/clock";
+import { Clock } from "./activity/Clock";
 
 import menuIcon from "../assets/menu.svg";
 import systemLogo from "../assets/Logo-completo.png"; // Logo general del sistema
