@@ -1191,56 +1191,96 @@ useEffect(() => {
                   </select>
                 </div>
               </div>
-
-              {/* TABLA EMPLEADOS */}
+ {/* TABLA EMPLEADOS */}
               <div className="overflow-auto">
                 <table className="min-w-full text-center border border-gray-200">
-         <thead className="bg-gray-100">
-  <tr>
-    <th className="px-3 py-2">ID</th>
-    <th className="px-3 py-2">Nombre</th>
-    <th className="px-3 py-2">Rol</th>
-    <th className="px-3 py-2">Sucursal</th>
-    <th className="px-3 py-2">Estado</th>
-    <th className="px-3 py-2">Detalle</th>
-  </tr>
-</thead>
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-3 py-2">ID</th>
+                      <th className="px-3 py-2">Nombre</th>
+                      <th className="px-3 py-2">Rol</th>
+                      <th className="px-3 py-2">Sucursal</th>
+                      <th className="px-3 py-2">Estado</th>
+                      <th className="px-3 py-2">Detalle</th>
+                    </tr>
+                  </thead>
 
+                  <tbody>
+                    {empleadosVisibles.map((e) => {
+                      const estado = estadoEmpleados[e.id] || "sin_entrada";
 
+                      const estadoColor =
+                        estado === "presente" || estado === "en_jornada"
+                          ? "bg-green-500"
+                          : estado === "en_descanso"
+                          ? "bg-yellow-400"
+                          : estado === "fuera"
+                          ? "bg-red-500"
+                          : estado === "finalizado"
+                          ? "bg-gray-500"
+                          : "bg-gray-400";
 
-                 <tbody>
-  {empleadosFiltrados.map((e) => (
-    <tr
-      key={e.id}
-      className="hover:bg-gray-50 transition cursor-pointer"
-    ><td className="py-2">{e.id}</td>
-<td className="py-2">{e.nombre}</td>
-<td className="py-2 capitalize">{e.role || e.rol}</td>
+                      const estadoLabel =
+                        estado === "presente" || estado === "en_jornada"
+                          ? "En jornada"
+                          : estado === "en_descanso"
+                          ? "En descanso"
+                          : estado === "fuera"
+                          ? "Fuera"
+                          : estado === "finalizado"
+                          ? "Finalizado"
+                          : "Sin entrada";
 
-<td className="py-2">{getSucursalName(sucursales, e.sucursal_id)}</td>
+                      return (
+                        <tr
+                          key={e.id}
+                          className="hover:bg-gray-50 transition cursor-pointer"
+                        >
+                          <td className="py-2">{e.id}</td>
+                          <td className="py-2">{e.nombre}</td>
+                          <td className="py-2 capitalize">
+                            {e.role || e.rol}
+                          </td>
+                          <td className="py-2">
+                            {getSucursalName(sucursales, e.sucursal_id)}
+                          </td>
 
-<td className="py-2"> ... bolita estado ... </td>
+                          {/* Estado */}
+                          <td className="py-2">
+                            <div className="flex justify-center items-center gap-2">
+                              <span
+                                className={`w-3 h-3 rounded-full ${estadoColor}`}
+                              ></span>
+                              <span className="hidden lg:inline text-sm text-gray-600">
+                                {estadoLabel}
+                              </span>
+                            </div>
+                          </td>
 
-<td className="py-2">
-  <button onClick={() => onDetalle(e)}>Ver detalle</button>
-</td>
+                          {/* Botón detalle */}
+                          <td className="py-2">
+                            <button
+                              onClick={() => abrirDetalleEmpleado(e)}
+                              className="text-blue-700 hover:underline font-medium"
+                            >
+                              Ver detalle
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
 
-
-    </tr>
-  ))}
-
-  {empleadosFiltrados.length === 0 && (
-    <tr>
-      <td
-        colSpan={6}
-        className="py-4 text-gray-500 text-sm italic"
-      >
-        No hay empleados para los filtros seleccionados.
-      </td>
-    </tr>
-  )}
-</tbody>
-
+                    {empleadosVisibles.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="py-4 text-gray-500 text-sm italic"
+                        >
+                          No hay empleados para los filtros seleccionados.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
                 </table>
               </div>
             </div>
