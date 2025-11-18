@@ -408,12 +408,6 @@ const [estadoEmpleados, setEstadoEmpleados] = useState({});
 
 
 
-    // Cuando cambian empleados → cargar estado de cada uno
-useEffect(() => {
-  if (isAdmin && empleados.length > 0) {
-    cargarEstadosEmpleados();
-  }
-}, [isAdmin, empleados, cargarEstadosEmpleados]);
 
 
 
@@ -630,6 +624,15 @@ const cargarEstadosEmpleados = useCallback(async () => {
 
   setEstadoEmpleados(resultado);
 }, [isAdmin, empleados, token]);
+
+
+  // Cuando cambian empleados → cargar estado de cada uno
+useEffect(() => {
+  if (isAdmin && empleados.length > 0) {
+    cargarEstadosEmpleados();
+  }
+}, [isAdmin, empleados, cargarEstadosEmpleados]);
+
 
 
   const abrirDetalleEmpleado = async (emp) => {
