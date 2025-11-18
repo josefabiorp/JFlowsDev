@@ -22,7 +22,7 @@ export const useUpdateProfile = (token, setUser, setToken) => {
     }
 
     try {
-      const response = await fetch('http://138.197.204.143/api/update-Profile', {
+      const response = await fetch('https://jflowsdev.duckdns.org/api/update-Profile', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
