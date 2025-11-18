@@ -2,7 +2,7 @@ import "../../index.css";
 import { ButtonLoadingPage } from './ButtonLoadPage.jsx';
 import React, { useState, useEffect } from "react";
 import TextTransition, { presets } from 'react-text-transition';
-const parrafos = ['Administra tus Optimiza la gestión de tu equipo en un solo lugar.','Más que control, un espacio para crecer juntos.', 'Controla tus ganancias','Gestión inteligente para empresas de cualquier tamaño.']
+const parrafos = ['Optimiza la gestión de tu equipo en un solo lugar.','Más que control, un espacio para crecer juntos.', 'Controla tus ganancias','Gestión inteligente para empresas de cualquier tamaño.']
 export function ImgLoadingPage({ image }) {
   const [index, setIndex] = React.useState(0);
   React.useEffect(() => {
