@@ -7,15 +7,35 @@ import controlImage from "../assets/control.svg";
 import { useUser } from "./hooks/UserContext";
 import { usePermisos } from "./hooks/usePermisos";
 
+// URL de API — se recomienda mover a import.meta.env más adelante
 const API_URL = "https://jflowsdev.duckdns.org/api";
+
+// ===== Importación correcta de íconos =====
+import IconVentas from "../assets/Ventas.svg";
+import IconCompras from "../assets/Compras.svg";
+import IconUsuarios from "../assets/usuarios.svg";
+import IconProveedores from "../assets/Proveedores.svg";
+import IconClientes from "../assets/Clientes.svg";
+import IconEstadisticas from "../assets/Estadisticas.svg";
+import IconConfiguracion from "../assets/Configuracion.svg";
+import IconCerrarSesion from "../assets/CerrarSesion.svg";
+
+// ===== Mapa de íconos =====
+const iconMap = {
+    Ventas: IconVentas,
+    Compras: IconCompras,
+    usuarios: IconUsuarios,
+    Proveedores: IconProveedores,
+    Clientes: IconClientes,
+    Estadisticas: IconEstadisticas,
+    Configuracion: IconConfiguracion,
+    CerrarSesion: IconCerrarSesion,
+};
 
 export function Sidebar({ logout }) {
     const [open, setOpen] = useState(true);
     const navigate = useNavigate();
 
-    // ──────────────────────────────────────────
-    //   USUARIO ACTUAL
-    // ──────────────────────────────────────────
     const { user, isAdmin, isEmpleado, token } = useUser();
 
     const empresaLogo = user?.empresa?.logo ? user.empresa.logo : null;
@@ -23,9 +43,7 @@ export function Sidebar({ logout }) {
 
     const handleClick = () => navigate("/");
 
-    // ──────────────────────────────────────────
-    //   PERMISOS PENDIENTES (ADMIN)
-    // ──────────────────────────────────────────
+    // ===== Permisos pendientes (solo admin) =====
     const { pendientes, fetchPendientes } = usePermisos(API_URL, token, user);
 
     useEffect(() => {
@@ -34,9 +52,7 @@ export function Sidebar({ logout }) {
         }
     }, [isAdmin, token, user, fetchPendientes]);
 
-    // ──────────────────────────────────────────
-    //   MENÚ PRINCIPAL
-    // ──────────────────────────────────────────
+    // ===== Menú =====
     const Menus = [
         {
             title: "Registro de Asistencias",
@@ -57,15 +73,12 @@ export function Sidebar({ logout }) {
             roles: ["admin", "empleado"],
             gap: true,
         },
-
-        // ⭐ NUEVO — MÓDULO DESCANSOS
         {
             title: "Descansos",
             src: "Proveedores",
             link: "/Descansos",
             roles: ["admin", "empleado"],
         },
-
         {
             title: "Reportes y Estadísticas",
             src: "Clientes",
@@ -114,7 +127,7 @@ export function Sidebar({ logout }) {
                         : "lg:w-28 w-16 lg:bg-slate-50 lg:pb-[50rem]"
                 } transition-width lg:bg-slate-50 lg:p-5 lg:pt-10 relative ease-in-out duration-300 lg:duration-150`}
             >
-                {/* Control abrir/cerrar */}
+                {/* Botón abrir/cerrar */}
                 <img
                     src={controlImage}
                     className={`absolute cursor-pointer -right-2 lg:-right-5 top-9 border-slate-100 border-5 rounded-full
@@ -167,7 +180,7 @@ export function Sidebar({ logout }) {
                                         onClick={Menu.action}
                                         className="flex items-center gap-x-4 cursor-pointer transition ease-in-out"
                                     >
-                                        <img src={`./src/assets/${Menu.src}.svg`} alt={Menu.title} />
+                                        <img src={iconMap[Menu.src]} alt={Menu.title} />
                                         <span className={`${!open && "hidden"} origin-left duration-700`}>
                                             {Menu.title}
                                         </span>
@@ -177,13 +190,12 @@ export function Sidebar({ logout }) {
                                         to={Menu.link}
                                         className="flex items-center gap-x-4 transition ease-in-out"
                                     >
-                                        <img src={`./src/assets/${Menu.src}.svg`} alt={Menu.title} />
+                                        <img src={iconMap[Menu.src]} alt={Menu.title} />
                                         <span
                                             className={`${!open && "hidden"} origin-left duration-700 flex items-center gap-2`}
                                         >
                                             {Menu.title}
 
-                                            {/* Badge permisos pendientes */}
                                             {Menu.title === "Permisos" &&
                                                 isAdmin &&
                                                 pendientes > 0 && (
