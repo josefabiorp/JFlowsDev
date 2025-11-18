@@ -130,14 +130,22 @@ export function Settings() {
                       )}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={onPickImage}
-                      className="absolute -bottom-2 right-0 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 py-1.5 shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-600"
-                      aria-label="Cambiar imagen de perfil"
-                    >
-                      Cambiar
-                    </button>
+             
+
+
+
+                    {/* Botón Cambiar (solo en modo edición) */}
+{editMode && (
+  <button
+    type="button"
+    onClick={onPickImage}
+    className="absolute -bottom-2 right-0 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 py-1.5 shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-600"
+    aria-label="Cambiar imagen de perfil"
+  >
+    Cambiar
+  </button>
+)}
+
                     <input
                       ref={fileInputRef}
                       type="file"
