@@ -181,7 +181,6 @@ export function Settings() {
                         </>
                       ) : (
                         <>
-                          <button type="button" onClick={handleCancelEdit} className="btn-ghost">Cancelar</button>
                           <button
                             type="submit"
                             form="settings-form"
