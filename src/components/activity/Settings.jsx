@@ -74,13 +74,22 @@ export function Settings() {
     setEditMode(false);
   };
 
-  const handleCancelEdit = () => {
-    resetFormFromHook(user); // vuelve a cargar los valores del usuario actual
-    setProfileImage(null);
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview(null);
-    setEditMode(false);
-  };
+const handleCancelEdit = () => {
+  // 🛡️ Solo llamar reset si realmente existe
+  if (typeof resetFormFromHook === "function") {
+    resetFormFromHook(user); // vuelve a poner los valores originales del usuario
+  }
+
+  // Limpiar imagen temporal
+  setProfileImage(null);
+  if (imagePreview) {
+    URL.revokeObjectURL(imagePreview);
+  }
+  setImagePreview(null);
+
+  // Salir de modo edición
+  setEditMode(false);
+};
 
   useEffect(() => {
     if (success) toast.success(success);
@@ -162,36 +171,40 @@ export function Settings() {
                     <p className="text-slate-600 mt-1">Rol: <span className="font-medium">{roleLabel}</span></p>
 
                     <div className="flex flex-wrap gap-2 mt-4">
-                      {!editMode ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => setEditMode(true)}
-                            className="btn-primary"
-                          >
-                            Editar perfil
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setShowConfirmDelete(true)}
-                            className="btn-ghost"
-                          >
-                            Eliminar cuenta
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            type="submit"
-                            form="settings-form"
-                            disabled={isSaving}
-                            className="btn-primary disabled:opacity-60"
-                          >
-                            {isSaving ? "Guardando…" : "Guardar cambios"}
-                          </button>
-                        </>
-                      )}
-                    </div>
+  {!editMode ? (
+    <>
+      {/* SOLO mostrar Editar perfil */}
+      <button
+        type="button"
+        onClick={() => setEditMode(true)}
+        className="btn-primary"
+      >
+        Editar perfil
+      </button>
+    </>
+  ) : (
+    <>
+      {/* BOTONES QUE SOLO EXISTEN EN MODO EDICIÓN */}
+      <button
+        type="button"
+        onClick={handleCancelEdit}
+        className="btn-ghost"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="submit"
+        form="settings-form"
+        disabled={isSaving}
+        className="btn-primary disabled:opacity-60"
+      >
+        {isSaving ? "Guardando…" : "Guardar cambios"}
+      </button>
+    </>
+  )}
+</div>
+
                   </div>
                 </div>
               </Card>
