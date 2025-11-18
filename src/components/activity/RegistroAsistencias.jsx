@@ -1195,22 +1195,17 @@ useEffect(() => {
               {/* TABLA EMPLEADOS */}
               <div className="overflow-auto">
                 <table className="min-w-full text-center border border-gray-200">
-                <thead className="bg-gray-100">
+         <thead className="bg-gray-100">
   <tr>
     <th className="px-3 py-2">ID</th>
     <th className="px-3 py-2">Nombre</th>
     <th className="px-3 py-2">Rol</th>
-
-    {/* SOLO si NO es admin → mostrar sucursal, estado, detalle */}
-    {!isAdmin && (
-      <>
-        <th className="px-3 py-2">Sucursal</th>
-        <th className="px-3 py-2">Estado</th>
-        <th className="px-3 py-2">Detalle</th>
-      </>
-    )}
+    <th className="px-3 py-2">Sucursal</th>
+    <th className="px-3 py-2">Estado</th>
+    <th className="px-3 py-2">Detalle</th>
   </tr>
 </thead>
+
 
 
                  <tbody>
@@ -1222,36 +1217,14 @@ useEffect(() => {
 <td className="py-2">{e.nombre}</td>
 <td className="py-2 capitalize">{e.role || e.rol}</td>
 
-{/* SOLO si NO es admin → mostrar sucursal, estado y detalle */}
-{!isAdmin && (
-  <>
-    <td className="py-2">
-      {getSucursalName(sucursales, e.sucursal_id)}
-    </td>
+<td className="py-2">{getSucursalName(sucursales, e.sucursal_id)}</td>
 
-    <td className="py-2">
-      <span
-        className={`inline-block w-3 h-3 rounded-full ${
-          estadoEmpleados[e.id] === "presente" ||
-          estadoEmpleados[e.id] === "en_jornada"
-            ? "bg-green-500"
-            : estadoEmpleados[e.id] === "en_descanso"
-            ? "bg-yellow-400"
-            : "bg-red-500"
-        }`}
-      ></span>
-    </td>
+<td className="py-2"> ... bolita estado ... </td>
 
-    <td className="py-2">
-      <button
-        onClick={() => onDetalle(e)}
-        className="text-blue-700 hover:underline font-medium"
-      >
-        Ver detalle
-      </button>
-    </td>
-  </>
-)}
+<td className="py-2">
+  <button onClick={() => onDetalle(e)}>Ver detalle</button>
+</td>
+
 
     </tr>
   ))}
