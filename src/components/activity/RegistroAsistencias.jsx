@@ -1195,14 +1195,20 @@ useEffect(() => {
               {/* TABLA EMPLEADOS */}
               <div className="overflow-auto">
                 <table className="min-w-full text-center border border-gray-200">
-                  <thead className="bg-gray-100">
+                <thead className="bg-gray-100">
   <tr>
     <th className="px-3 py-2">ID</th>
     <th className="px-3 py-2">Nombre</th>
     <th className="px-3 py-2">Rol</th>
-    <th className="px-3 py-2">Sucursal</th>
-    <th className="px-3 py-2">Estado</th>   {/* 🔵 Nueva columna */}
-    <th className="px-3 py-2">Detalle</th>
+
+    {/* SOLO si NO es admin → mostrar sucursal, estado, detalle */}
+    {!isAdmin && (
+      <>
+        <th className="px-3 py-2">Sucursal</th>
+        <th className="px-3 py-2">Estado</th>
+        <th className="px-3 py-2">Detalle</th>
+      </>
+    )}
   </tr>
 </thead>
 
@@ -1212,44 +1218,41 @@ useEffect(() => {
     <tr
       key={e.id}
       className="hover:bg-gray-50 transition cursor-pointer"
-    >
-      <td className="py-2">{e.id}</td>
-      <td className="py-2">{e.nombre}</td>
-      <td className="py-2 capitalize">{e.role || e.rol}</td>
+    ><td className="py-2">{e.id}</td>
+<td className="py-2">{e.nombre}</td>
+<td className="py-2 capitalize">{e.role || e.rol}</td>
 
-      {/* SUCURSAL */}
-      <td className="py-2">
-        {getSucursalName(sucursales, e.sucursal_id)}
-      </td>
+{/* SOLO si NO es admin → mostrar sucursal, estado y detalle */}
+{!isAdmin && (
+  <>
+    <td className="py-2">
+      {getSucursalName(sucursales, e.sucursal_id)}
+    </td>
 
-      {/* 🔵 NUEVA CELDA → ESTADO */}
-      <td className="py-2">
-        <span
-          className={`inline-block w-3 h-3 rounded-full ${
-            estadoEmpleados[e.id] === "presente" ||
-            estadoEmpleados[e.id] === "en_jornada"
-              ? "bg-green-500"
-              : estadoEmpleados[e.id] === "en_descanso"
-              ? "bg-yellow-400"
-              : estadoEmpleados[e.id] === "fuera" ||
-                estadoEmpleados[e.id] === "sin_entrada" ||
-                estadoEmpleados[e.id] == null
-              ? "bg-red-500"
-              : "bg-gray-500"
-          }`}
-          title={estadoEmpleados[e.id] || "sin_entrada"}
-        ></span>
-      </td>
+    <td className="py-2">
+      <span
+        className={`inline-block w-3 h-3 rounded-full ${
+          estadoEmpleados[e.id] === "presente" ||
+          estadoEmpleados[e.id] === "en_jornada"
+            ? "bg-green-500"
+            : estadoEmpleados[e.id] === "en_descanso"
+            ? "bg-yellow-400"
+            : "bg-red-500"
+        }`}
+      ></span>
+    </td>
 
-      {/* BOTÓN DETALLE */}
-      <td className="py-2">
-        <button
-          onClick={() => abrirDetalleEmpleado(e)}
-          className="text-blue-700 hover:underline font-medium"
-        >
-          Ver detalle
-        </button>
-      </td>
+    <td className="py-2">
+      <button
+        onClick={() => onDetalle(e)}
+        className="text-blue-700 hover:underline font-medium"
+      >
+        Ver detalle
+      </button>
+    </td>
+  </>
+)}
+
     </tr>
   ))}
 
