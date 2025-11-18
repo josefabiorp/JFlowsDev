@@ -314,6 +314,11 @@ export function RegistroAsistencias() {
     return sucursales.find((s) => s.id === user.sucursal_id) || null;
   }, [user, sucursales]);
 
+
+// Estados individuales de cada empleado (ADMIN)
+const [estadoEmpleados, setEstadoEmpleados] = useState({});
+
+  
   // Sucursal del empleado del modal (admin)
   const sucursalEmpleadoModal = useMemo(() => {
     if (!selectedEmployee?.sucursal_id || !sucursales.length) return null;
@@ -399,6 +404,20 @@ export function RegistroAsistencias() {
       toast.error("Error al actualizar");
     }
   };
+
+
+
+
+    // Cuando cambian empleados → cargar estado de cada uno
+useEffect(() => {
+  if (isAdmin && empleados.length > 0) {
+    cargarEstadosEmpleados();
+  }
+}, [isAdmin, empleados, cargarEstadosEmpleados]);
+
+
+
+  
 
   // =========================================
   // QR
@@ -589,6 +608,29 @@ export function RegistroAsistencias() {
       toast.error("No se pudo cargar el historial");
     }
   };
+// Cargar estado de TODOS los empleados (ADMIN)
+const cargarEstadosEmpleados = useCallback(async () => {
+  if (!isAdmin || empleados.length === 0) return;
+
+  const resultado = {};
+
+  for (const emp of empleados) {
+    try {
+      const res = await fetch(`${API_URL}/asistencias/estado/${emp.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+
+      resultado[emp.id] = data.estado || data.estado_actual || "sin_entrada";
+    } catch {
+      resultado[emp.id] = "sin_entrada";
+    }
+  }
+
+  setEstadoEmpleados(resultado);
+}, [isAdmin, empleados, token]);
+
 
   const abrirDetalleEmpleado = async (emp) => {
     setSelectedEmployee(emp);
@@ -650,6 +692,9 @@ export function RegistroAsistencias() {
       </div>
     );
   }
+
+
+
 
   return (
     <>
