@@ -3,6 +3,7 @@ import React from "react";
 import { AppModal } from "../AppModal.jsx";
 import { buildStaticMapUrl, formatTime } from "./helpers.js";
 
+
 export function DetalleEmpleadoModal({
   isOpen,
   onClose,

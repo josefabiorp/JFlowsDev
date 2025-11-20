@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom'; // Importa useNavigate
 import { Header } from '../Header.jsx';
+import { API_URL } from "../../config/api";
+
 export function ResetPassword() {
   const { token } = useParams();
   const location = useLocation();
@@ -39,7 +41,7 @@ export function ResetPassword() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://138.197.204.143//api/password/reset', {
+const response = await fetch(`${API_URL}/password/reset`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

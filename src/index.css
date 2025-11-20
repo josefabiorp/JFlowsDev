@@ -2,37 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-
-.HomePage{
+.HomePage {
     height: 100%;
-    width:100%;
+    width: 100%;
 }
 
+/* Flip card */
 .flip-card {
     perspective: 1000px;
-  }
-  
-  .flip-card-inner {
+}
+
+.flip-card-inner {
     transition: transform 0.6s;
     transform-style: preserve-3d;
-  }
-  
-  .flip-card-front,
-  
-  .flip-card-back {
+}
+
+.flip-card-front,
+.flip-card-back {
     position: absolute;
     backface-visibility: hidden;
-  }
-  
-  .flip-card-back {
+}
+
+.flip-card-back {
     transform: rotateY(180deg);
-  }
-  
-  @keyframes rotateGradient {
+}
+
+/* Gradient animation */
+@keyframes rotateGradient {
     0% {
       background-position: 0% 0%;
     }
     100% {
       background-position: 100% 100%;
     }
-  }
+}
+
+/* 🔥 ANIMATE BLOB (requerido por tus divs) */
+@keyframes blob {
+    0% {
+        transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+        transform: translate(30px, -50px) scale(1.1);
+    }
+    66% {
+        transform: translate(-20px, 20px) scale(0.9);
+    }
+    100% {
+        transform: translate(0px, 0px) scale(1);
+    }
+}
+
+.animate-blob {
+    animation: blob 7s infinite;
+}
+
+/* 🔥 ANIMATION DELAYS personalizados */
+.animation-delay-1000 {
+    animation-delay: 1s;
+}
+
+.animation-delay-2000 {
+    animation-delay: 2s;
+}

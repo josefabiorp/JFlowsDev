@@ -1,13 +1,3 @@
-// -----------------------------------------------------------
-// MANTENIMIENTO EMPRESAS — VERSIÓN EMPRESARIAL COMPLETA
-// Con:
-// ✔ Upload de logo + preview
-// ✔ Provincias, Cantones y Distritos dinámicos (API Costa Rica)
-// ✔ UI corporativa igual a Settings
-// ✔ Placeholders limpios y accesibles
-// ✔ Lógica original intacta
-// -----------------------------------------------------------
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -19,6 +9,9 @@ import { useUser } from "../hooks/UserContext.jsx";
 
 import { motion } from "framer-motion";
 import "../../index.css";
+
+// 🔥 IMPORTAMOS API GLOBAL
+import { API_URL } from "../../config/api";
 
 export function MantenimientoEmpresas() {
   const navigate = useNavigate();
@@ -61,7 +54,7 @@ export function MantenimientoEmpresas() {
   // FETCH EMPRESAS
   // -----------------------------------------------------------
   const fetchEmpresas = () => {
-    fetch("https://jflowsdev.duckdns.org/api/empresas")
+    fetch(`${API_URL}/empresas`)
       .then((res) => res.json())
       .then((data) => {
         setEmpresas(data);
@@ -112,7 +105,7 @@ export function MantenimientoEmpresas() {
   }, [canton]);
 
   // -----------------------------------------------------------
-  // VALIDACIÓN HACIENDA (CÉDULA)
+  // VALIDACIÓN HACIENDA
   // -----------------------------------------------------------
   const verificarCedulaEmpresa = async () => {
     const esFisica = empresa === "fisica";
@@ -160,7 +153,7 @@ export function MantenimientoEmpresas() {
   };
 
   // -----------------------------------------------------------
-  // CREATE EMPRESA (POST)
+  // CREATE EMPRESA
   // -----------------------------------------------------------
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -180,7 +173,7 @@ export function MantenimientoEmpresas() {
 
     if (logo) formData.append("logo", logo);
 
-    fetch("https://jflowsdev.duckdns.org/api/empresas", {
+    fetch(`${API_URL}/empresas`, {
       method: "POST",
       body: formData,
     })
@@ -208,12 +201,11 @@ export function MantenimientoEmpresas() {
     setDescripcion(emp.descripcion);
     setEditingEmpresa(emp.id);
 
-    // Cargar logo previo
     if (emp.logo_url) setLogoPreview(emp.logo_url);
   };
 
   // -----------------------------------------------------------
-  // UPDATE EMPRESA (PUT)
+  // UPDATE EMPRESA
   // -----------------------------------------------------------
   const handleUpdate = (e) => {
     e.preventDefault();
@@ -233,16 +225,13 @@ export function MantenimientoEmpresas() {
 
     if (logo) formData.append("logo", logo);
 
-    fetch(
-      `https://jflowsdev.duckdns.org/api/empresas/${editingEmpresa}`,
-      {
-        method: "POST",
-        headers: {
-          "X-HTTP-Method-Override": "PUT",
-        },
-        body: formData,
-      }
-    )
+    fetch(`${API_URL}/empresas/${editingEmpresa}`, {
+      method: "POST",
+      headers: {
+        "X-HTTP-Method-Override": "PUT",
+      },
+      body: formData,
+    })
       .then((res) => res.json())
       .then(() => {
         fetchEmpresas();
@@ -251,10 +240,10 @@ export function MantenimientoEmpresas() {
   };
 
   // -----------------------------------------------------------
-  // DELETE
+  // DELETE EMPRESA
   // -----------------------------------------------------------
   const handleDelete = (id) => {
-    fetch(`https://jflowsdev.duckdns.org/api/empresas/${id}`, {
+    fetch(`${API_URL}/empresas/${id}`, {
       method: "DELETE",
     }).then(fetchEmpresas);
   };

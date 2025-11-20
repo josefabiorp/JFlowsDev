@@ -6,6 +6,7 @@ import { Sidebar } from '../Sidebar.jsx';
 import { useUser } from '../hooks/UserContext';
 import { Bar } from 'react-chartjs-2';
 import { Chart, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
+import { API_URL } from "../../config/api";
 
 // Registra las escalas y elementos que necesitas
 Chart.register(CategoryScale, LinearScale, BarElement, Title);
@@ -19,7 +20,7 @@ export function EstadisticasFacturas() {
   const { logout } = useAccountManagement();
 
   const fetchFacturas = () => {
-    fetch('http://localhost/managersyncbdf/public/api/facturas')
+    fetch(`${API_URL}/facturas`)  
       .then(response => {
         if (!response.ok) {
           throw new Error('Error en la red');

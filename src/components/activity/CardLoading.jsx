@@ -6,9 +6,9 @@ export function CardLoadingPage({ image00, image01, image02, image03 }) {
   return (
   
     <div className='bg-slate-300  lg:flex flex-col justify-center items-center lg:h-screen lg:relative' id="servicios">
-<div class="absolute top-20 left-40 w-72 h-72 lg:bg-slate-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-    <div class="absolute top-14 right-24 w-72 h-72 lg:bg-sky-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-1000"></div>
-    <div class="absolute -bottom-8 left-96 w-72 h-72 lg:bg-blue-500 rounded-full mix-blend-multiply filter blur-xl bg-opacity-20 opacity-20 animate-blob animation-delay-2000"></div>
+<div className="absolute top-20 left-40 w-72 h-72 lg:bg-slate-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+    <div className="absolute top-14 right-24 w-72 h-72 lg:bg-sky-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-1000"></div>
+    <div className="absolute -bottom-8 left-96 w-72 h-72 lg:bg-blue-500 rounded-full mix-blend-multiply filter blur-xl bg-opacity-20 opacity-20 animate-blob animation-delay-2000"></div>
         <h1 className='text-6xl text-center font-bold mb-1 text-blue-950 p-10
         lg:text-7xl  lg:justify-center '>Nuestros servicios</h1>
       <div>

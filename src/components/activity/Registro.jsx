@@ -5,6 +5,9 @@ import { Header } from "../Header.jsx";
 import { Footer } from "../Footer.jsx";
 import toast from "react-hot-toast";
 
+import { API_URL } from "../../config/api";
+
+
 export function Register() {
   const [formData, setFormData] = useState({
     nombre: "",
@@ -30,7 +33,7 @@ export function Register() {
     const fetchEmpresas = async () => {
       try {
         
-        const res = await fetch("https://jflowsdev.duckdns.org/api/empresas");
+          const res = await fetch(`${API_URL}/empresas`);
         if (!res.ok) throw new Error("Error al cargar empresas");
         const data = await res.json();
         setEmpresas(data);
@@ -72,7 +75,7 @@ export function Register() {
     }
 
     try {
-      const res = await fetch("https://jflowsdev.duckdns.org/api/register", {
+       const res = await fetch(`${API_URL}/register`, {
         method: "POST",
         body: formDataToSend,
       });

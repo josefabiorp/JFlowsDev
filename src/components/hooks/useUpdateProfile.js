@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_URL } from "../../config/api";
 
 export const useUpdateProfile = (token, setUser, setToken) => {
   const [error, setError] = useState('');
@@ -9,25 +10,29 @@ export const useUpdateProfile = (token, setUser, setToken) => {
     data.append('nombre', formData.nombre);
     data.append('email', formData.email);
     data.append('cedula', formData.cedula);
-    
-    // Añade los campos de la contraseña si están presentes en formData
-    if (formData.current_password && formData.password && formData.password_confirmation) {
+
+    // Campos de contraseña si vienen
+    if (
+      formData.current_password &&
+      formData.password &&
+      formData.password_confirmation
+    ) {
       data.append('current_password', formData.current_password);
       data.append('password', formData.password);
-      data.append('password_confirmation', formData.password_confirmation); // Confirmación de la nueva contraseña
+      data.append('password_confirmation', formData.password_confirmation);
     }
-    
+
     if (profileImage) {
       data.append('profile_image', profileImage);
     }
 
     try {
-      const response = await fetch('https://jflowsdev.duckdns.org/api/update-Profile', {
+      const response = await fetch(`${API_URL}/update-Profile`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: data
+        body: data,
       });
 
       const result = await response.json();
@@ -36,6 +41,7 @@ export const useUpdateProfile = (token, setUser, setToken) => {
       }
 
       setUser(result.user);
+
       if (result.token) {
         setToken(result.token);
         localStorage.setItem('token', result.token);

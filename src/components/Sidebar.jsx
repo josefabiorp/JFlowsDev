@@ -6,11 +6,9 @@ import controlImage from "../assets/control.svg";
 
 import { useUser } from "./hooks/UserContext";
 import { usePermisos } from "./hooks/usePermisos";
+import { API_URL } from "../config/api";
 
-// URL de API — se recomienda mover a import.meta.env más adelante
-const API_URL = "https://jflowsdev.duckdns.org/api";
-
-// ===== Importación correcta de íconos =====
+// ===== Íconos =====
 import IconVentas from "../assets/Ventas.svg";
 import IconCompras from "../assets/Compras.svg";
 import IconUsuarios from "../assets/usuarios.svg";
@@ -19,6 +17,9 @@ import IconClientes from "../assets/Clientes.svg";
 import IconEstadisticas from "../assets/Estadisticas.svg";
 import IconConfiguracion from "../assets/Configuracion.svg";
 import IconCerrarSesion from "../assets/CerrarSesion.svg";
+
+// 🔥 Nuevo ícono
+import IconPoliticasEmpresa from "../assets/politicas.png";
 
 // ===== Mapa de íconos =====
 const iconMap = {
@@ -29,13 +30,13 @@ const iconMap = {
     Clientes: IconClientes,
     Estadisticas: IconEstadisticas,
     Configuracion: IconConfiguracion,
+    PoliticasEmpresa: IconPoliticasEmpresa,
     CerrarSesion: IconCerrarSesion,
 };
 
 export function Sidebar({ logout }) {
     const [open, setOpen] = useState(true);
     const navigate = useNavigate();
-
     const { user, isAdmin, isEmpleado, token } = useUser();
 
     const empresaLogo = user?.empresa?.logo ? user.empresa.logo : null;
@@ -43,7 +44,7 @@ export function Sidebar({ logout }) {
 
     const handleClick = () => navigate("/");
 
-    // ===== Permisos pendientes (solo admin) =====
+    // Permisos del admin
     const { pendientes, fetchPendientes } = usePermisos(API_URL, token, user);
 
     useEffect(() => {
@@ -98,9 +99,9 @@ export function Sidebar({ logout }) {
             roles: ["admin"],
         },
         {
-            title: "Estadísticas",
-            src: "Estadisticas",
-            link: "/EstadisticasFacturas",
+            title: "Políticas de Empresa",
+            src: "PoliticasEmpresa",
+            link: "/PoliticasEmpresa",
             roles: ["admin"],
         },
         {
@@ -119,25 +120,21 @@ export function Sidebar({ logout }) {
     ];
 
     return (
-        <div className="flex min-h-dvh max-h-fit w-full h-fit">
+        <div className="flex min-h-dvh w-full h-fit">
             <div
                 className={`flex-h-grow h-fit ${
                     open
-                        ? "lg:w-72 lg:pb-72 w-screen bg-slate-50 pb-[50rem]"
+                        ? "lg:w-72 w-screen bg-slate-50 pb-[50rem]"
                         : "lg:w-28 w-16 lg:bg-slate-50 lg:pb-[50rem]"
-                } transition-width lg:bg-slate-50 lg:p-5 lg:pt-10 relative ease-in-out duration-300 lg:duration-150`}
+                } transition-width lg:p-5 lg:pt-10 relative ease-in-out duration-300`}
             >
-                {/* Botón abrir/cerrar */}
+                {/* Botón toggle */}
                 <img
                     src={controlImage}
                     className={`absolute cursor-pointer -right-2 lg:-right-5 top-9 border-slate-100 border-5 rounded-full
                         ${!open && "rotate-180"}
-                        ${
-                            open
-                                ? "w-12 -translate-x-10 lg:-translate-x-0"
-                                : "w-9 -translate-x-10 lg:-translate-x-0"
-                        }
-                        transition duration-300 ease-in-out`}
+                        ${open ? "w-12 -translate-x-10" : "w-9 -translate-x-10"}
+                        transition duration-300`}
                     onClick={() => setOpen(!open)}
                     alt="Control"
                 />
@@ -149,53 +146,58 @@ export function Sidebar({ logout }) {
                         src={logoToShow}
                         className={`cursor-pointer duration-500 ${
                             open && "rotate-[360deg]"
-                        } ${
-                            open
-                                ? "lg:block block lg:w-auto w-36 lg:pl-2"
-                                : "lg:block hidden lg:pl-3"
-                        }`}
+                        } ${open ? "lg:block block w-36" : "lg:block hidden"}`}
                         alt="Logo"
                     />
                 </div>
 
                 {/* Menú */}
                 <ul
-                    className={`flex-grow pt-6 lg:mb-16 mb-0 transition ease-in-out duration-500 ${
-                        open ? "lg:block block" : "lg:block hidden"
+                    className={`flex-grow pt-6 transition ${
+                        open ? "block" : "hidden lg:block"
                     }`}
-                    id="menuOptions"
                 >
                     {Menus.map((Menu, index) =>
                         (isAdmin && Menu.roles.includes("admin")) ||
                         (isEmpleado && Menu.roles.includes("empleado")) ? (
                             <li
                                 key={index}
-                                className={`flex lg:text-sm md:text-base text-xl rounded-md p-2 cursor-pointer py-2 lg:px-3 px-8 my-1
-                                    hover:bg-slate-200 lg:hover:px-1 hover:text-indigo-800 font-medium text-gray-900 items-left gap-x-5
-                                    transition ease-in-out ${Menu.gap ? "mt-9" : "mt-2"}`}
+                                className={`flex lg:text-sm md:text-base text-xl rounded-md cursor-pointer py-2 px-8 lg:px-3 my-1
+                                hover:bg-slate-200 hover:text-indigo-800 font-medium text-gray-900 gap-x-5
+                                transition ${Menu.gap ? "mt-9" : "mt-2"}`}
                             >
                                 {/* Cerrar sesión */}
                                 {Menu.title === "Cerrar sesión" ? (
                                     <div
                                         onClick={Menu.action}
-                                        className="flex items-center gap-x-4 cursor-pointer transition ease-in-out"
+                                        className="flex items-center gap-x-4"
                                     >
-                                        <img src={iconMap[Menu.src]} alt={Menu.title} />
-                                        <span className={`${!open && "hidden"} origin-left duration-700`}>
+                                        <img
+                                            src={iconMap[Menu.src]}
+                                            alt={Menu.title}
+                                            className="w-5 h-5 object-contain"
+                                        />
+                                        <span className={`${!open && "hidden"} duration-700`}>
                                             {Menu.title}
                                         </span>
                                     </div>
                                 ) : (
                                     <Link
                                         to={Menu.link}
-                                        className="flex items-center gap-x-4 transition ease-in-out"
+                                        className="flex items-center gap-x-4"
                                     >
-                                        <img src={iconMap[Menu.src]} alt={Menu.title} />
+                                        <img
+                                            src={iconMap[Menu.src]}
+                                            alt={Menu.title}
+                                            className="w-5 h-5 object-contain"
+                                        />
+
                                         <span
-                                            className={`${!open && "hidden"} origin-left duration-700 flex items-center gap-2`}
+                                            className={`${!open && "hidden"} duration-700 flex items-center gap-2`}
                                         >
                                             {Menu.title}
 
+                                            {/* Badge de permisos */}
                                             {Menu.title === "Permisos" &&
                                                 isAdmin &&
                                                 pendientes > 0 && (

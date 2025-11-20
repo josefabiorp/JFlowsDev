@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useUser } from './UserContext'; // Asegúrate de importar correctamente
+import { API_URL } from "../../config/api";
 
 export const useAccountManagement = () => {
   const navigate = useNavigate();
@@ -7,7 +8,7 @@ export const useAccountManagement = () => {
 
   const deleteAccount = async (token) => {
     try {
-      const response = await fetch('https://jflowsdev.duckdns.org/api/delete-account', {
+const response = await fetch(`${API_URL}/password/reset`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

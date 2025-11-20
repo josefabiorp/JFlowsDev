@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Header } from '../Header.jsx';
 import { Footer } from '../Footer.jsx';
 
+// 🔥 IMPORTAMOS LA API GLOBAL
+import { API_URL } from "../../config/api";
+
 export function ForgotPassword() {
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
@@ -9,21 +12,17 @@ export function ForgotPassword() {
   
     const handleChange = (e) => setEmail(e.target.value);
   
-  
     const handleSubmit = async (e) => {
       e.preventDefault();
-  
-      // Resetear errores al enviar el formulario
       setErrors({});
   
-      // Validar que el email tenga un formato correcto
       if (!email) {
         setErrors({ email: 'El correo electrónico es obligatorio.' });
         return;
       }
   
       try {
-        const response = await fetch('http://managersyncbdf.test/api/password/email', {
+        const response = await fetch(`${API_URL}/password/email`, {   // ←🔥 SOLO esto cambia
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -35,9 +34,8 @@ export function ForgotPassword() {
   
         if (response.ok) {
           setMessage(data.message);
-          setEmail(''); // Limpiar el campo de email después de enviar
+          setEmail('');
         } else {
-          // Manejar errores específicos del servidor
           setErrors({ server: data.message || 'Ocurrió un error desconocido.' });
           setMessage('');
         }
@@ -84,4 +82,4 @@ export function ForgotPassword() {
     <Footer/>
     </>
   );
-  }
+}

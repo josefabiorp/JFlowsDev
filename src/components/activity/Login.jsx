@@ -5,6 +5,9 @@ import { Header } from "../Header.jsx";
 import { Footer } from "../Footer.jsx";
 import "../../index.css";
 
+// 🔥 Importamos API_URL global
+import { API_URL } from "../../config/api";
+
 export function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -21,7 +24,8 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("https://jflowsdev.duckdns.org/api/login", {
+      const response = await fetch(`${API_URL}/login`, {
+        // ←🔥 ÚNICO CAMBIO
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

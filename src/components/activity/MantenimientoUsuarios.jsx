@@ -6,6 +6,7 @@ import { useAccountManagement } from "../hooks/useAccountManagement.js";
 import { useUser } from "../hooks/UserContext";
 import { Loading } from "./Loading.jsx";
 import toast from "react-hot-toast";
+import { API_URL } from "../../config/api";
 
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
@@ -16,7 +17,6 @@ import { AppModal } from "./AppModal.jsx";
 export function MantenimientoUsuarios() {
   const { token, user } = useUser();
   const { logout } = useAccountManagement();
-  const API_URL = "https://jflowsdev.duckdns.org/api";
 
   // Estados principales
   const [usuarios, setUsuarios] = useState([]);
