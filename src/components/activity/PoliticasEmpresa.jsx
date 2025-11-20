@@ -8,6 +8,8 @@ import { useUser } from "../hooks/UserContext.jsx";
 import { useAccountManagement } from "../hooks/useAccountManagement.js";
 import { usePoliticas } from "../hooks/usePoliticas.js";
 import { useAsistencias } from "../hooks/useAsistencia.js";
+import { useTurnos } from "../hooks/useTurnos.js";
+import { useAsignacionTurnos } from "../hooks/useAsignacionTurnos.js";
 
 import { API_URL } from "../../config/api";
 import toast from "react-hot-toast";
@@ -88,59 +90,155 @@ export function PoliticasEmpresa() {
   };
 
   // ============================
-  //  EMPLEADOS (para asignar turnos)
+  //  EMPLEADOS (para asignar turnos) - usamos isAdmin y
+  //  ahora empleados por sucursal vía API
   // ============================
-  const { empleados, isAdmin } = useAsistencias(API_URL, token, user);
+  const { isAdmin } = useAsistencias(API_URL, token, user);
 
   // ============================
-  //  TURNOS LOCALES (SOLO FRONTEND)
+  //  TURNOS (BACKEND REAL)
   // ============================
-  const empresaKey = user?.empresa_id || "global";
-  const STORAGE_TURNOS = `turnos_${empresaKey}`;
-  const STORAGE_ASIGNACIONES = `asignaciones_turnos_${empresaKey}`;
+  const {
+    turnos,
+    loadingTurnos,
+    crearTurno,
+    actualizarTurno,
+    eliminarTurno,
+  } = useTurnos(API_URL, token, user);
 
-  const [turnos, setTurnos] = useState([]);
-  const [asignaciones, setAsignaciones] = useState({}); // { empleadoId: turnoId }
+  const { asignarTurno, obtenerTurnoEmpleado } = useAsignacionTurnos(
+    API_URL,
+    token,
+    user
+  );
 
+  // Estado local para creación de turno (frontend)
   const [nuevoTurno, setNuevoTurno] = useState({
     nombre: "",
     hora_inicio: "08:00",
     hora_fin: "16:00",
     tolerancia_atraso: 10,
     tolerancia_salida: 5,
-    jornada_horas: 8,
+    jornada_horas: 8, // solo informativo en UI, no se envía al backend
     minutos_almuerzo: 60,
   });
 
-  // Cargar desde localStorage
-  useEffect(() => {
-    if (!user) return;
-    try {
-      if (typeof window !== "undefined") {
-        const t = window.localStorage.getItem(STORAGE_TURNOS);
-        const a = window.localStorage.getItem(STORAGE_ASIGNACIONES);
-        if (t) setTurnos(JSON.parse(t));
-        if (a) setAsignaciones(JSON.parse(a));
-      }
-    } catch (err) {
-      console.warn("Error cargando turnos locales:", err);
-    }
-  }, [STORAGE_TURNOS, STORAGE_ASIGNACIONES, user]);
+  // ============================
+  //  SUCURSALES + EMPLEADOS POR SUCURSAL
+  // ============================
+  const [sucursales, setSucursales] = useState([]);
+  const [sucursalSeleccionada, setSucursalSeleccionada] = useState("");
+  const [empleadosSucursal, setEmpleadosSucursal] = useState([]);
 
-  // Guardar en localStorage cuando cambian
+  // Empleados enriquecidos con su turno asignado (desde backend)
+  const [empleadosConTurno, setEmpleadosConTurno] = useState([]);
+
+  // Cargar sucursales de la empresa
   useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(STORAGE_TURNOS, JSON.stringify(turnos));
-        window.localStorage.setItem(
-          STORAGE_ASIGNACIONES,
-          JSON.stringify(asignaciones)
-        );
+    if (!API_URL || !token || !user?.id) return;
+
+    async function cargarSucursales() {
+      try {
+        const res = await fetch(`${API_URL}/sucursales-empresa`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error("Error obteniendo sucursales");
+        }
+
+        const data = await res.json();
+        setSucursales(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error(error);
+        toast.error("No se pudieron cargar las sucursales.");
       }
-    } catch (err) {
-      console.warn("Error guardando turnos locales:", err);
     }
-  }, [turnos, asignaciones, STORAGE_TURNOS, STORAGE_ASIGNACIONES]);
+
+    cargarSucursales();
+  }, [API_URL, token, user?.id]);
+
+  // Cargar empleados de la sucursal seleccionada
+  useEffect(() => {
+    if (!API_URL || !token || !user?.id) return;
+
+    if (!sucursalSeleccionada) {
+      setEmpleadosSucursal([]);
+      setEmpleadosConTurno([]);
+      return;
+    }
+
+    async function cargarEmpleadosDeSucursal() {
+      try {
+        const res = await fetch(
+          `${API_URL}/empleados/sucursal/${sucursalSeleccionada}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Error obteniendo empleados de la sucursal");
+        }
+
+        const data = await res.json();
+        const lista = Array.isArray(data) ? data : [];
+        setEmpleadosSucursal(lista);
+      } catch (error) {
+        console.error(error);
+        toast.error("No se pudieron cargar los empleados de la sucursal.");
+        setEmpleadosSucursal([]);
+      }
+    }
+
+    cargarEmpleadosDeSucursal();
+  }, [API_URL, token, user?.id, sucursalSeleccionada]);
+
+  // Cargar turno actual por empleado desde la API, pero ahora usando empleadosSucursal
+  useEffect(() => {
+    if (!Array.isArray(empleadosSucursal) || empleadosSucursal.length === 0) {
+      setEmpleadosConTurno([]);
+      return;
+    }
+
+    let cancelado = false;
+
+    async function cargarTurnosEmpleados() {
+      const enriched = [];
+
+      for (const emp of empleadosSucursal) {
+        try {
+          const turno = await obtenerTurnoEmpleado(emp.id);
+          enriched.push({
+            ...emp,
+            turno_asignado: turno ? turno.id : "",
+          });
+        } catch (error) {
+          console.warn("Error obteniendo turno para empleado", emp.id, error);
+          enriched.push({
+            ...emp,
+            turno_asignado: "",
+          });
+        }
+      }
+
+      if (!cancelado) {
+        setEmpleadosConTurno(enriched);
+      }
+    }
+
+    cargarTurnosEmpleados();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [empleadosSucursal, obtenerTurnoEmpleado]);
 
   const handleNuevoTurnoChange = (e) => {
     const { name, value } = e.target;
@@ -156,46 +254,81 @@ export function PoliticasEmpresa() {
     }));
   };
 
-  const handleAgregarTurno = (e) => {
+  const handleAgregarTurno = async (e) => {
     e.preventDefault();
     if (!nuevoTurno.nombre?.trim()) {
       toast.error("El turno necesita un nombre.");
       return;
     }
-    const id = Date.now().toString(); // id local
-    const turnoNuevo = { ...nuevoTurno, id };
-    setTurnos((prev) => [...prev, turnoNuevo]);
-    setNuevoTurno((prev) => ({
-      ...prev,
-      nombre: "",
-    }));
-    toast.success("Turno agregado (configuración local).");
-  };
 
-  const handleEliminarTurno = (id) => {
-    setTurnos((prev) => prev.filter((t) => t.id !== id));
-    setAsignaciones((prev) => {
-      const copia = { ...prev };
-      Object.keys(copia).forEach((empId) => {
-        if (copia[empId] === id) delete copia[empId];
+    try {
+      await crearTurno({
+        nombre: nuevoTurno.nombre,
+        hora_inicio: nuevoTurno.hora_inicio,
+        hora_fin: nuevoTurno.hora_fin,
+        tolerancia_entrada: nuevoTurno.tolerancia_atraso,
+        tolerancia_salida: nuevoTurno.tolerancia_salida,
+        minutos_almuerzo: nuevoTurno.minutos_almuerzo,
       });
-      return copia;
-    });
+
+      setNuevoTurno((prev) => ({
+        ...prev,
+        nombre: "",
+      }));
+
+      toast.success("Turno creado en la API correctamente.");
+    } catch (error) {
+      console.error(error);
+      toast.error("No se pudo crear el turno.");
+    }
   };
 
-  const handleAsignacionEmpleado = (empleadoId, turnoId) => {
-    setAsignaciones((prev) => ({
-      ...prev,
-      [empleadoId]: turnoId || null,
-    }));
+  const handleEliminarTurnoClick = async (id) => {
+    try {
+      await eliminarTurno(id);
+      toast.success("Turno eliminado correctamente.");
+    } catch (error) {
+      console.error(error);
+      toast.error("No se pudo eliminar el turno.");
+    }
+  };
+
+  const handleAsignacionEmpleado = async (empleadoId, turnoId) => {
+    // Si se selecciona vacío, por ahora NO llamamos al backend
+    // (podríamos implementar endpoint para desasignar si lo deseas)
+    if (!turnoId) {
+      setEmpleadosConTurno((prev) =>
+        prev.map((emp) =>
+          emp.id === empleadoId ? { ...emp, turno_asignado: "" } : emp
+        )
+      );
+      return;
+    }
+
+    try {
+      await asignarTurno(empleadoId, Number(turnoId));
+
+      setEmpleadosConTurno((prev) =>
+        prev.map((emp) =>
+          emp.id === empleadoId
+            ? { ...emp, turno_asignado: Number(turnoId) }
+            : emp
+        )
+      );
+
+      toast.success("Turno asignado correctamente.");
+    } catch (error) {
+      console.error(error);
+      toast.error("No se pudo asignar el turno.");
+    }
   };
 
   const empleadosOrdenados = useMemo(() => {
-    if (!Array.isArray(empleados)) return [];
-    return [...empleados].sort((a, b) =>
+    if (!Array.isArray(empleadosConTurno)) return [];
+    return [...empleadosConTurno].sort((a, b) =>
       (a.nombre || "").localeCompare(b.nombre || "")
     );
-  }, [empleados]);
+  }, [empleadosConTurno]);
 
   if (!user || !token) {
     return <div className="p-8 text-center">Iniciá sesión para continuar.</div>;
@@ -434,7 +567,7 @@ export function PoliticasEmpresa() {
           </div>
 
           {/* ===========================
-              BLOQUE: TURNOS POR EMPLEADO (LOCAL)
+              BLOQUE: TURNOS POR EMPLEADO (API REAL)
               =========================== */}
           <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-6 lg:p-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -444,9 +577,9 @@ export function PoliticasEmpresa() {
                 </h2>
                 <p className="text-gray-500 text-xs mt-1">
                   Aquí podés definir turnos con hora de entrada/salida y
-                  asignarlos a cada empleado. Esta configuración es{" "}
-                  <strong>local (frontend)</strong> y no modifica todavía tu
-                  API, pero podés usarla para ordenar y controlar mejor.
+                  asignarlos a cada empleado. Esta configuración se guarda en la{" "}
+                  <strong>API</strong> de tu sistema y se usará para los cálculos
+                  futuros de asistencia.
                 </p>
               </div>
 
@@ -584,7 +717,9 @@ export function PoliticasEmpresa() {
                 Turnos definidos
               </h3>
 
-              {turnos.length === 0 ? (
+              {loadingTurnos ? (
+                <p className="text-xs text-gray-500">Cargando turnos...</p>
+              ) : turnos.length === 0 ? (
                 <p className="text-xs text-gray-500">
                   Todavía no hay turnos configurados. Creá al menos uno para
                   asignarlo a los empleados.
@@ -597,7 +732,9 @@ export function PoliticasEmpresa() {
                         <th className="px-3 py-2 text-left">Nombre</th>
                         <th className="px-3 py-2 text-left">Horario</th>
                         <th className="px-3 py-2 text-left">Tolerancias</th>
-                        <th className="px-3 py-2 text-left">Jornada / Almuerzo</th>
+                        <th className="px-3 py-2 text-left">
+                          Jornada / Almuerzo
+                        </th>
                         <th className="px-3 py-2 text-right">Acciones</th>
                       </tr>
                     </thead>
@@ -609,16 +746,16 @@ export function PoliticasEmpresa() {
                             {t.hora_inicio} – {t.hora_fin}
                           </td>
                           <td className="px-3 py-2">
-                            Atraso: {t.tolerancia_atraso} min <br />
+                            Atraso: {t.tolerancia_entrada} min <br />
                             Salida: {t.tolerancia_salida} min
                           </td>
                           <td className="px-3 py-2">
-                            Jornada: {t.jornada_horas}h <br />
+                            Jornada: {form.jornada_diaria_horas}h <br />
                             Almuerzo: {t.minutos_almuerzo} min
                           </td>
                           <td className="px-3 py-2 text-right">
                             <button
-                              onClick={() => handleEliminarTurno(t.id)}
+                              onClick={() => handleEliminarTurnoClick(t.id)}
                               className="text-xs text-red-600 hover:text-red-800"
                             >
                               Eliminar
@@ -638,9 +775,35 @@ export function PoliticasEmpresa() {
                 Asignar turno a empleados
               </h3>
 
-              {empleadosOrdenados.length === 0 ? (
+              {/* Selector de sucursal */}
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Seleccionar sucursal
+                </label>
+                <select
+                  className="w-full sm:w-1/2 rounded-lg border-gray-300 shadow-sm px-2 py-1 text-xs"
+                  value={sucursalSeleccionada || ""}
+                  onChange={(e) => setSucursalSeleccionada(e.target.value)}
+                >
+                  <option value="">-- Elegí una sucursal --</option>
+                  {sucursales.map((suc) => (
+                    <option key={suc.id} value={suc.id}>
+                      {suc.nombre}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Primero elegí una sucursal para ver los empleados disponibles.
+                </p>
+              </div>
+
+              {!sucursalSeleccionada ? (
                 <p className="text-xs text-gray-500">
-                  No se encontraron empleados para esta empresa.
+                  Seleccioná una sucursal para ver los empleados.
+                </p>
+              ) : empleadosOrdenados.length === 0 ? (
+                <p className="text-xs text-gray-500">
+                  No se encontraron empleados para esta sucursal.
                 </p>
               ) : turnos.length === 0 ? (
                 <p className="text-xs text-gray-500">
@@ -670,13 +833,18 @@ export function PoliticasEmpresa() {
                           <td className="px-3 py-2">{emp.email}</td>
                           <td className="px-3 py-2">
                             <select
-                              value={asignaciones[emp.id] || ""}
+                              value={emp.turno_asignado || ""}
                               onChange={(e) =>
-                                handleAsignacionEmpleado(emp.id, e.target.value)
+                                handleAsignacionEmpleado(
+                                  emp.id,
+                                  e.target.value
+                                )
                               }
                               className="w-full rounded-lg border-gray-300 shadow-sm px-2 py-1 text-xs"
                             >
-                              <option value="">Usar política general</option>
+                              <option value="">
+                                Usar política general (sin turno fijo)
+                              </option>
                               {turnos.map((t) => (
                                 <option key={t.id} value={t.id}>
                                   {t.nombre} ({t.hora_inicio}–{t.hora_fin})
@@ -692,9 +860,9 @@ export function PoliticasEmpresa() {
               )}
 
               <p className="text-[11px] text-gray-400 mt-2">
-                Nota: Por ahora esta asignación se usa solo para organización y
-                futuras reglas de asistencia. Se guarda localmente en tu
-                navegador (no en la API).
+                Nota: La información de turnos se guarda en la API. En el futuro
+                estas asignaciones se usarán para cálculos automáticos de
+                puntualidad, horas extra y ausencias.
               </p>
             </div>
           </div>
