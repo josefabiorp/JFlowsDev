@@ -1,15 +1,14 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import QrScanner from "react-qr-scanner";
 import toast from "react-hot-toast";
 
 import { FaSignInAlt, FaSignOutAlt, FaCoffee, FaQrcode } from "react-icons/fa";
 
 import { API_URL } from "../../config/api";
-import { formatTime, minutesToLabel } from "../utils/timeUtils.js";
+import { minutesToLabel } from "../utils/timeUtils.js";
 import { buildStaticMapUrl } from "../utils/mapUtils.js";
-import { getWeekRange, getMonthRange, getYearRange } from "../utils/rangoFechasUtils.js";
 
-import { getSucursalName } from "../utils/empleadosUtils";
+import { useAsignacionTurnos } from "../hooks/useAsignacionTurnos.js";
 
 export function AsistenciaEmpleado({
   user,
@@ -29,9 +28,9 @@ export function AsistenciaEmpleado({
   getMonthRange,
   getYearRange,
   cargarReporte,
-  setShowReportModal,
+  setShowReportModal, turnoEmpleadoModal,
+  
 }) {
-
 
   // ======================================================
   // ESTADOS LOCALES
@@ -40,6 +39,20 @@ export function AsistenciaEmpleado({
   const [busyEntrada, setBusyEntrada] = useState(false);
   const [busySalida, setBusySalida] = useState(false);
   const [busyDescanso, setBusyDescanso] = useState(false);
+
+  // ======================================================
+  // TURNO ASIGNADO DEL EMPLEADO
+  // ======================================================
+  const { obtenerTurnoEmpleado } = useAsignacionTurnos(API_URL, token, user);
+  const [turnoEmpleado, setTurnoEmpleado] = useState(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    obtenerTurnoEmpleado(user.id)
+      .then((t) => setTurnoEmpleado(t))
+      .catch(() => setTurnoEmpleado(null));
+  }, [user?.id]);
 
   // ======================================================
   // SCAN QR
@@ -63,8 +76,9 @@ export function AsistenciaEmpleado({
     <>
       {/* CONTENEDOR PRINCIPAL */}
       <div className="bg-white p-6 rounded-xl shadow mb-6 text-center">
+
+        {/* ESTADO */}
         <div className="mb-3">
-          {/* CHOQUE DE ESTADO */}
           <span
             className={`inline-flex items-center gap-2 text-xs font-medium border px-2.5 py-1 rounded-full ${
               estadoActual === "presente"
@@ -81,6 +95,29 @@ export function AsistenciaEmpleado({
               : "⚪ Sin entrada"}
           </span>
         </div>
+
+        {/* ============ NUEVO BLOQUE: TURNO DEL EMPLEADO ============== */}
+        {turnoEmpleado && (
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-left mx-auto max-w-md shadow">
+            <h3 className="text-blue-800 font-bold text-lg mb-2">
+              📌 Tu turno asignado
+            </h3>
+
+            <p><strong>Nombre:</strong> {turnoEmpleado.nombre}</p>
+            <p><strong>Horario:</strong> {turnoEmpleado.hora_inicio} – {turnoEmpleado.hora_fin}</p>
+
+            <p className="mt-2">
+              <strong>Tolerancia entrada:</strong> {turnoEmpleado.tolerancia_entrada} min
+            </p>
+            <p>
+              <strong>Tolerancia salida:</strong> {turnoEmpleado.tolerancia_salida} min
+            </p>
+
+            <p className="mt-2">
+              <strong>Almuerzo:</strong> {turnoEmpleado.minutos_almuerzo} min
+            </p>
+          </div>
+        )}
 
         {/* QR */}
         <div className="mt-5 flex justify-center">
@@ -106,6 +143,7 @@ export function AsistenciaEmpleado({
 
         {/* BOTONES ENTRADA / SALIDA */}
         <div className="flex justify-center pt-6 gap-4 flex-wrap mb-4">
+
           {/* ENTRADA */}
           <button
             onClick={async () => {
@@ -174,17 +212,21 @@ export function AsistenciaEmpleado({
                   <span className="font-semibold">Total trabajado:</span>{" "}
                   {minutesToLabel(resumenAvanzado.totalMin)}
                 </p>
+
                 <p>
                   <span className="font-semibold">Jornada objetivo:</span>{" "}
                   {minutesToLabel(resumenAvanzado.jornadaMin)}
                 </p>
+
                 <p>
                   <span className="font-semibold">
                     Total ajustado por política (
-                    {resumenAvanzado?.modoRedondeo || "normal"})
+                    {resumenAvanzado?.modoRedondeo || "normal"}
+                    )
                   </span>{" "}
                   {minutesToLabel(resumenAvanzado.totalMinAjustado)}
                 </p>
+
                 <p>
                   <span className="font-semibold">Descansos tomados:</span>{" "}
                   {minutesToLabel(resumenAvanzado.minutosDescansoTomados)}
@@ -325,8 +367,6 @@ export function AsistenciaEmpleado({
           >
             <FaCoffee /> Café
           </button>
-
-          {/* MÁS TIPOS... */}
         </div>
 
         {/* LISTA DE DESCANSOS */}

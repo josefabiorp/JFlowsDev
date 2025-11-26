@@ -1,7 +1,7 @@
-// ==============================================
-//  REGISTRO DE ASISTENCIAS — CONTROLADOR GENERAL
-//  Esta versión NO modifica lógica, solo organiza
-// ==============================================
+// ===============================================================
+//  REGISTRO DE ASISTENCIAS — CONTROLADOR GENERAL (CORPORATIVO)
+//  Versión optimizada + DetalleEmpleadoModal profesional integrado
+// ===============================================================
 
 import React, {
   useState,
@@ -13,7 +13,7 @@ import React, {
 import "../../index.css";
 import { API_URL } from "../../config/api.js";
 
-// Hooks de negocio (sin cambiar nada)
+// Hooks de negocio
 import { useUser } from "../hooks/UserContext.jsx";
 import { useAccountManagement } from "../hooks/useAccountManagement.js";
 import { useAsistencias } from "../hooks/useAsistencia.js";
@@ -24,13 +24,19 @@ import { usePoliticas } from "../hooks/usePoliticas.js";
 import { Header } from "../Header.jsx";
 import { Footer } from "../Footer.jsx";
 import { Sidebar } from "../Sidebar.jsx";
-import { AppModal } from "./AppModal.jsx";
-import { DetalleEmpleadoModal } from "./asistencias/DetalleEmpleadoModal.jsx";
 
-// Utils (NO cambia lógica)
+// Modales reales
+import { DetalleEmpleadoModal } from "./asistencias/DetalleEmpleadoModal.jsx";
+import { ReporteEmpleadoModal } from "./asistencias/ReporteEmpleadoModal.jsx";
+
+// Utils
 import { formatTime } from "../utils/timeUtils";
 import { buildStaticMapUrl } from "../utils/mapUtils";
-import { getWeekRange, getMonthRange, getYearRange } from "../utils/rangoFechasUtils";
+import {
+  getWeekRange,
+  getMonthRange,
+  getYearRange,
+} from "../utils/rangoFechasUtils";
 
 // Partes separadas (las dos UIs)
 import { AsistenciaEmpleado } from "./AsistenciaEmpleado.jsx";
@@ -38,15 +44,15 @@ import { AsistenciaAdmin } from "./AsistenciaAdmin.jsx";
 
 import toast from "react-hot-toast";
 
-// ===============================================
-// COMIENZO DEL COMPONENTE PRINCIPAL
-// ===============================================
+// ===============================================================
+//  COMPONENTE PRINCIPAL
+// ===============================================================
 export function RegistroAsistencias() {
   // CONTEXTO
   const { token, user } = useUser();
   const { logout } = useAccountManagement();
 
-  // HOOKS DE NEGOCIO (todo igual)
+  // HOOKS DE NEGOCIO
   const {
     empleados,
     estadoActual,
@@ -72,7 +78,7 @@ export function RegistroAsistencias() {
     fetchPoliticas,
   } = usePoliticas(API_URL, token, user);
 
-  // ESTADOS MANTENIDOS IGUAL
+  // ESTADOS GENERALES
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -102,25 +108,40 @@ export function RegistroAsistencias() {
     }
   }, [token, user]);
 
-  // ESTADOS ADMIN (historial, modales)
+  // ===============================================================
+  //  ADMIN: ESTADOS DEL MODAL + RESUMEN CORPORATIVO
+  // ===============================================================
   const [estadoEmpleados, setEstadoEmpleados] = useState({});
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [historial, setHistorial] = useState([]);
-  const [rangoFechas, setRangoFechas] = useState({ from: "", to: "" });
+
+  // estado del día actual
   const [modalLoading, setModalLoading] = useState(false);
   const [modalEstadoActual, setModalEstadoActual] = useState(null);
   const [modalAsistencia, setModalAsistencia] = useState(null);
 
-  // MODAL EMPLEADO (reportes)
+  // rango + dia a dia
+  const [historial, setHistorial] = useState([]);
+  const [rangoFechas, setRangoFechas] = useState({ from: "", to: "" });
+
+  // 🔵 RESUMEN corporativo completo
+  const [detalleResumenRango, setDetalleResumenRango] = useState(null);
+
+  // 🔵 turno del empleado (para admin)
+  const [turnoEmpleadoModal, setTurnoEmpleadoModal] = useState(null);
+
+  // ===============================================================
+  //  EMPLEADO: reporte general
+  // ===============================================================
   const [showReportModal, setShowReportModal] = useState(false);
   const [reporte, setReporte] = useState([]);
   const [reporteResumen, setReporteResumen] = useState(null);
+  const [turnoReporte, setTurnoReporte] = useState(null);
 
-  // FILTRO BÚSQUEDA (admin)
+  // BUSQUEDA ADMIN
   const [busqueda, setBusqueda] = useState("");
 
-  // EMPLEADOS FILTRADOS (misma lógica)
+  // FILTRADOS
   const empleadosFiltrados = useMemo(
     () =>
       empleados.filter((e) => {
@@ -143,7 +164,9 @@ export function RegistroAsistencias() {
     return sucursales.find((s) => s.id === user.sucursal_id) || null;
   }, [user, sucursales]);
 
-  // INICIALIZACIÓN (NO se toca nada)
+  // ===============================================================
+  //  INICIALIZACIÓN
+  // ===============================================================
   useEffect(() => {
     if (!user?.id || !token) return;
 
@@ -176,7 +199,7 @@ export function RegistroAsistencias() {
     fetchPoliticas,
   ]);
 
-  // AUTOREFRESH (igual)
+  // AUTOREFRESH
   useEffect(() => {
     if (!user?.id || !token) return;
 
@@ -191,9 +214,9 @@ export function RegistroAsistencias() {
     return () => clearInterval(id);
   }, [user, token, isAdmin, fetchEmpleados, fetchEstadoActual]);
 
-  // ===============================
-  //  ACCIONES ADMIN
-  // ===============================
+  // ===============================================================
+  //  ADMIN: cargar estado de todos
+  // ===============================================================
   const cargarEstadosEmpleados = useCallback(async () => {
     if (!isAdmin || empleados.length === 0) return;
 
@@ -206,7 +229,8 @@ export function RegistroAsistencias() {
         });
 
         const data = await res.json();
-        resultado[emp.id] = data.estado || data.estado_actual || "sin_entrada";
+        resultado[emp.id] =
+          data.estado || data.estado_actual || "sin_entrada";
       } catch {
         resultado[emp.id] = "sin_entrada";
       }
@@ -221,33 +245,48 @@ export function RegistroAsistencias() {
     }
   }, [isAdmin, empleados, cargarEstadosEmpleados]);
 
+  // ===============================================================
+  //  ADMIN: abrir modal del empleado
+  // ===============================================================
   const abrirDetalleEmpleado = async (emp) => {
     setSelectedEmployee(emp);
+
     setModalEstadoActual(null);
     setModalAsistencia(null);
+
+    // reset rango
     setHistorial([]);
     setRangoFechas({ from: "", to: "" });
+
+    // reset corporativo
+    setDetalleResumenRango(null);
+    setTurnoEmpleadoModal(null);
+
     setShowDetailModal(true);
 
     await fetchEstadoActualEmpleado(emp.id);
   };
 
+  // ===============================================================
+  //  ADMIN: estado actual del empleado
+  // ===============================================================
   const fetchEstadoActualEmpleado = useCallback(
     async (empId) => {
       if (!empId || !token) return;
       setModalLoading(true);
+
       try {
         const res = await fetch(`${API_URL}/asistencias/estado/${empId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         if (!res.ok) throw new Error(`Error ${res.status}`);
         const data = await res.json();
 
         const est = data.estado || data.estado_actual || "sin_entrada";
         setModalEstadoActual(est);
         setModalAsistencia(data.asistencia || null);
-      } catch (err) {
-        console.warn("Modal estado error:", err);
+      } catch {
         setModalEstadoActual("sin_entrada");
         setModalAsistencia(null);
       } finally {
@@ -257,6 +296,9 @@ export function RegistroAsistencias() {
     [token]
   );
 
+  // ===============================================================
+  //  ADMIN: obtener rango COMPLETO + corporativo
+  // ===============================================================
   const fetchAsistenciasRango = async (usuario_id, from, to) => {
     if (!from || !to) return toast.error("Seleccioná un rango válido");
 
@@ -265,14 +307,26 @@ export function RegistroAsistencias() {
         `${API_URL}/asistencias/rango?usuario_id=${usuario_id}&from=${from}&to=${to}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       const data = await res.json();
-      if (res.ok) setHistorial(data.data || []);
-      else throw new Error();
+      if (!res.ok) throw new Error();
+
+      // 🔵 Arreglo corporativo por día
+      setHistorial(data.dia_a_dia || []);
+
+      // 🔵 Resumen del periodo
+      setDetalleResumenRango(data.resumen || null);
+
+      // 🔵 Turno asignado
+      setTurnoEmpleadoModal(data.turno || null);
     } catch {
       toast.error("No se pudo cargar el historial");
     }
   };
 
+  // ===============================================================
+  //  Exportar / Imprimir / Refresh
+  // ===============================================================
   const refreshManualmente = async () => {
     try {
       await Promise.all([
@@ -281,6 +335,7 @@ export function RegistroAsistencias() {
         fetchEstadoActual(),
         fetchPoliticas(),
       ]);
+
       updateLastUpdated();
       toast.success("Datos actualizados");
     } catch {
@@ -288,9 +343,6 @@ export function RegistroAsistencias() {
     }
   };
 
-  // ========================================
-  // EXPORTAR CSV
-  // ========================================
   const exportarCSV = () => {
     const headers = ["ID", "Nombre", "Email", "Rol", "Sucursal"];
     const rows = empleados.map((e) => [
@@ -298,7 +350,7 @@ export function RegistroAsistencias() {
       e.nombre,
       e.email,
       e.role || e.rol,
-      (sucursales.find((s) => s.id === e.sucursal_id)?.nombre || "—"),
+      sucursales.find((s) => s.id === e.sucursal_id)?.nombre || "—",
     ]);
 
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
@@ -313,9 +365,6 @@ export function RegistroAsistencias() {
     URL.revokeObjectURL(url);
   };
 
-  // ========================================
-  // IMPRIMIR
-  // ========================================
   const imprimirTabla = () => {
     const w = window.open("", "_blank");
     if (!w) return;
@@ -328,9 +377,7 @@ export function RegistroAsistencias() {
         <td>${e.nombre}</td>
         <td>${e.email}</td>
         <td>${e.role || e.rol}</td>
-        <td>${
-          sucursales.find((s) => s.id === e.sucursal_id)?.nombre || "—"
-        }</td>
+        <td>${sucursales.find((s) => s.id === e.sucursal_id)?.nombre || "—"}</td>
       </tr>`
       )
       .join("");
@@ -346,9 +393,9 @@ export function RegistroAsistencias() {
     w.print();
   };
 
-  // ========================================
-  // CARGAR REPORTE EMPLEADO
-  // ========================================
+  // ===============================================================
+  //  EMPLEADO: reporte personal
+  // ===============================================================
   const cargarReporte = async (from, to) => {
     try {
       const res = await fetch(
@@ -360,9 +407,11 @@ export function RegistroAsistencias() {
       if (!res.ok) throw new Error();
 
       setReporte(data.data || []);
+      setTurnoReporte(data.turno || null);
 
       if (data.data?.length) {
         let totalMin = 0;
+
         data.data.forEach((a) => {
           if (a.hora_entrada && a.hora_salida) {
             const entrada = new Date(`1970-01-01T${a.hora_entrada}`);
@@ -383,9 +432,9 @@ export function RegistroAsistencias() {
     }
   };
 
-  // ========================================
-  // RENDER PRINCIPAL
-  // ========================================
+  // ===============================================================
+  //  RENDER PRINCIPAL
+  // ===============================================================
   if (!user || !token) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-600">
@@ -441,7 +490,7 @@ export function RegistroAsistencias() {
             </div>
           </div>
 
-          {/* Aquí decide ADMIN o EMPLEADO */}
+          {/* ADMIN o EMPLEADO */}
           {isAdmin ? (
             <AsistenciaAdmin
               empleados={empleados}
@@ -458,178 +507,68 @@ export function RegistroAsistencias() {
               estadoEmpleados={estadoEmpleados}
             />
           ) : (
-         <AsistenciaEmpleado
-    user={user}
-    token={token}
-    estadoActual={estadoActual}
-    resumenAsistencia={resumenAsistencia}
-    politicas={politicas}
-    descansos={descansos}
-    descansoActivo={descansoActivo}
-    sucursalEmpleado={sucursalEmpleado}
-    marcarEntrada={marcarEntrada}
-    marcarSalida={marcarSalida}
-    iniciarDescanso={iniciarDescanso}
-    finalizarDescanso={finalizarDescanso}
-    getWeekRange={getWeekRange}
-    getMonthRange={getMonthRange}
-    getYearRange={getYearRange}
-    cargarReporte={cargarReporte}
-    setShowReportModal={setShowReportModal}
-/>
-
+            <AsistenciaEmpleado
+              user={user}
+              token={token}
+              estadoActual={estadoActual}
+              resumenAsistencia={resumenAsistencia}
+              politicas={politicas}
+              descansos={descansos}
+              descansoActivo={descansoActivo}
+              sucursalEmpleado={sucursalEmpleado}
+              marcarEntrada={marcarEntrada}
+              marcarSalida={marcarSalida}
+              iniciarDescanso={iniciarDescanso}
+              finalizarDescanso={finalizarDescanso}
+              getWeekRange={getWeekRange}
+              getMonthRange={getMonthRange}
+              getYearRange={getYearRange}
+              cargarReporte={cargarReporte}
+              setShowReportModal={setShowReportModal}
+              turnoEmpleadoModal={turnoReporte}
+            />
           )}
         </div>
       </div>
 
-      {/* MODALES ADMIN */}
-      <AppModal
-        isOpen={showDetailModal && selectedEmployee}
+      {/* ===========================================================
+          MODAL DETALLE EMPLEADO (ADMIN) – CORPORATIVO
+      ============================================================ */}
+      <DetalleEmpleadoModal
+        isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
-        title={`Asistencia de ${selectedEmployee?.nombre}`}
-        size="md"
-      >
-        <div className="space-y-5">
-          {modalLoading ? (
-            <div className="text-gray-500 text-sm">Cargando…</div>
-          ) : (
-            <>
-              <div className="text-sm">{modalEstadoActual}</div>
-              <p className="mt-3 text-sm">
-                Entrada:{" "}
-                <strong>
-                  {formatTime(modalAsistencia?.hora_entrada)}
-                </strong>{" "}
-                — Salida:{" "}
-                <strong>
-                  {formatTime(modalAsistencia?.hora_salida)}
-                </strong>
-              </p>
-            </>
-          )}
+        selectedEmployee={selectedEmployee}
+        sucursalEmpleadoModal={
+          selectedEmployee
+            ? sucursales.find((s) => s.id === selectedEmployee.sucursal_id)
+            : null
+        }
+        modalLoading={modalLoading}
+        modalEstadoActual={modalEstadoActual}
+        modalAsistencia={modalAsistencia}
+        rangoFechas={rangoFechas}
+        setRangoFechas={setRangoFechas}
+        fetchAsistenciasRango={fetchAsistenciasRango}
+        historial={historial}               // dia a dia
+        resumenRango={detalleResumenRango}  // resumen general
+        turnoEmpleadoModal={turnoEmpleadoModal} // turno corporativo
+      />
 
-          {/* Mapa sucursal */}
-          {selectedEmployee?.sucursal_id && (
-            <div className="border border-gray-200 rounded-lg p-3">
-              <h3 className="font-semibold text-sm mb-1">
-                📍 Sucursal del empleado
-              </h3>
-
-              {sucursales
-                .filter(
-                  (s) => s.id === selectedEmployee.sucursal_id
-                )
-                .map((s) => (
-                  <div key={s.id}>
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">Nombre:</span>{" "}
-                      {s.nombre}
-                    </p>
-                    {s.latitud && s.longitud && (
-                      <img
-                        src={buildStaticMapUrl(s.latitud, s.longitud)}
-                        alt="Mapa sucursal"
-                        className="w-full rounded-lg border shadow-sm mt-2"
-                      />
-                    )}
-                  </div>
-                ))}
-            </div>
-          )}
-
-          {/* HISTORIAL */}
-          <div>
-            <h3 className="font-semibold mb-2">Histórico</h3>
-
-            <div className="flex flex-wrap gap-2 mb-3">
-              <input
-                type="date"
-                className="border px-3 py-2 rounded-lg text-sm"
-                value={rangoFechas.from}
-                onChange={(e) =>
-                  setRangoFechas((prev) => ({
-                    ...prev,
-                    from: e.target.value,
-                  }))
-                }
-              />
-
-              <input
-                type="date"
-                className="border px-3 py-2 rounded-lg text-sm"
-                value={rangoFechas.to}
-                onChange={(e) =>
-                  setRangoFechas((prev) => ({
-                    ...prev,
-                    to: e.target.value,
-                  }))
-                }
-              />
-
-              <button
-                onClick={() =>
-                  fetchAsistenciasRango(
-                    selectedEmployee.id,
-                    rangoFechas.from,
-                    rangoFechas.to
-                  )
-                }
-                className="bg-sky-700 hover:bg-sky-800 text-white px-4 py-2 rounded-lg text-sm"
-              >
-                Consultar
-              </button>
-            </div>
-
-            {historial.length > 0 ? (
-              <table className="min-w-full text-sm border">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-3 py-1">Fecha</th>
-                    <th className="px-3 py-1">Entrada</th>
-                    <th className="px-3 py-1">Salida</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {historial.map((h) => (
-                    <tr key={h.id}>
-                      <td className="px-3 py-1">{h.fecha}</td>
-                      <td className="px-3 py-1">
-                        {formatTime(h.hora_entrada)}
-                      </td>
-                      <td className="px-3 py-1">
-                        {formatTime(h.hora_salida)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-gray-500 text-sm">
-                No hay registros en el rango.
-              </p>
-            )}
-          </div>
-        </div>
-      </AppModal>
-{/* MODAL REPORTE EMPLEADO */}
-<DetalleEmpleadoModal
-  isOpen={showReportModal}
-  onClose={() => setShowReportModal(false)}
-  selectedEmployee={user} // 👈 El empleado es el mismo user
-  sucursalEmpleadoModal={sucursalEmpleado}
-  modalLoading={false}
-  modalEstadoActual={estadoActual}
-  modalAsistencia={{
-    hora_entrada: resumenAsistencia?.horaEntrada,
-    hora_salida: resumenAsistencia?.horaSalida
-  }}
-  rangoFechas={rangoFechas}
-  setRangoFechas={setRangoFechas}
-  fetchAsistenciasRango={(id, from, to) => cargarReporte(from, to)}
-  historial={reporte}
-/>
-
+      {/* ===========================================================
+          MODAL REPORTE EMPLEADO (USER)
+      ============================================================ */}
+      <ReporteEmpleadoModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        user={user}
+        reporte={reporte}
+        reporteResumen={reporteResumen}
+        getWeekRange={getWeekRange}
+        getMonthRange={getMonthRange}
+        getYearRange={getYearRange}
+        cargarReporte={cargarReporte}
+        turnoEmpleado={turnoReporte}
+      />
 
       <Footer />
     </>

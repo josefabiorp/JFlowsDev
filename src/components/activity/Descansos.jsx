@@ -2,12 +2,12 @@ import React, { useEffect } from "react";
 import { Header } from "../Header.jsx";
 import { Footer } from "../Footer.jsx";
 import { Sidebar } from "../Sidebar.jsx";
+import { API_URL } from "../../config/api.js";
 
 import { useUser } from "../hooks/UserContext.jsx";
 import { useAccountManagement } from "../hooks/useAccountManagement.js";
 import { useDescansos } from "../hooks/useDescansos.js";
 
-const API_URL = "https://jflowsdev.duckdns.org/api";
 
 export function Descansos() {
   const { token, user, isAdmin } = useUser();

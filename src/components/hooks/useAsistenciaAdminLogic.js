@@ -1,12 +1,11 @@
 // =============================================================
 //  useAsistenciaAdminLogic.js
-//  (Lógica del panel ADMIN — sin cambiar ni 1 línea de la lógica)
+//  (Lógica del panel ADMIN — versión final PRO)
 // =============================================================
 
 import { useState, useCallback, useEffect } from "react";
 import toast from "react-hot-toast";
 
-// Recibe dependencias del controlador principal
 export function useAsistenciaAdminLogic({
   API_URL,
   token,
@@ -18,39 +17,48 @@ export function useAsistenciaAdminLogic({
   fetchPoliticas,
   isAdmin
 }) {
+
   // ===============================
-  //  ESTADOS
+  //  ESTADOS CORE
   // ===============================
   const [estadoEmpleados, setEstadoEmpleados] = useState({});
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+
   const [modalLoading, setModalLoading] = useState(false);
   const [modalEstadoActual, setModalEstadoActual] = useState(null);
   const [modalAsistencia, setModalAsistencia] = useState(null);
 
+  // 🔵 Dia a dia del rango
   const [historial, setHistorial] = useState([]);
+
+  // 🔵 Resumen del periodo (backend)
+  const [resumenRangoAdmin, setResumenRangoAdmin] = useState(null);
+
   const [rangoFechas, setRangoFechas] = useState({ from: "", to: "" });
 
+  // ⭐ Turno obtenido desde /asistencias/rango
+  const [turnoReporteAdmin, setTurnoReporteAdmin] = useState(null);
+
+
+
   // ===============================
-  //  ESTADOS DE FILTRO
+  //  FILTROS
   // ===============================
   const [busqueda, setBusqueda] = useState("");
   const [sucursalFiltro, setSucursalFiltro] = useState("");
 
-  // Empleados filtrados (misma lógica)
   const empleadosFiltrados = empleados.filter((e) => {
-    const matchesName = e.nombre
-      ?.toLowerCase()
-      .includes(busqueda.toLowerCase());
-
+    const matchesName = e.nombre?.toLowerCase().includes(busqueda.toLowerCase());
     const matchesSucursal =
       !sucursalFiltro || String(e.sucursal_id) === String(sucursalFiltro);
 
     return matchesName && matchesSucursal;
   });
 
+
   // ===============================
-  //  ESTADO ACTUAL DE CADA EMPLEADO
+  //  ESTADOS DE EMPLEADOS (circulitos)
   // ===============================
   const cargarEstadosEmpleados = useCallback(async () => {
     if (!isAdmin || empleados.length === 0) return;
@@ -73,46 +81,47 @@ export function useAsistenciaAdminLogic({
     setEstadoEmpleados(resultado);
   }, [isAdmin, empleados, token, API_URL]);
 
-  // ============================================================
-  //  🔥 EFECTO 1: Actualizar estados cada vez que cambian empleados
-  // ============================================================
+
+  // Autocargar cuando cambian empleados
   useEffect(() => {
-    if (isAdmin && empleados.length > 0) {
-      cargarEstadosEmpleados();
-    }
+    if (isAdmin && empleados.length > 0) cargarEstadosEmpleados();
   }, [isAdmin, empleados, cargarEstadosEmpleados]);
 
-  // ============================================================
-  //  🔥 EFECTO 2: Auto-refresh del estado cada 20 segundos
-  // ============================================================
+
+  // Auto-refresh cada 20 s
   useEffect(() => {
     if (!isAdmin) return;
 
     const interval = setInterval(() => {
-      if (empleados.length > 0) {
-        cargarEstadosEmpleados();
-      }
+      if (empleados.length > 0) cargarEstadosEmpleados();
     }, 20000);
 
     return () => clearInterval(interval);
   }, [isAdmin, empleados, cargarEstadosEmpleados]);
 
+
   // ===============================
-  //  ABRIR MODAL DE EMPLEADO
+  //  ABRIR MODAL ADMIN
   // ===============================
   const abrirDetalleEmpleado = async (emp, fetchEstadoActualEmpleado) => {
     setSelectedEmployee(emp);
+
+    // limpiar estados
     setModalEstadoActual(null);
     setModalAsistencia(null);
     setHistorial([]);
+    setResumenRangoAdmin(null);
+    setTurnoReporteAdmin(null);
     setRangoFechas({ from: "", to: "" });
+
     setShowDetailModal(true);
 
     await fetchEstadoActualEmpleado(emp.id);
   };
 
+
   // ===============================
-  //  ESTADO ACTUAL DEL EMPLEADO (MODAL)
+  //  ESTADO ACTUAL PARA EL MODAL
   // ===============================
   const fetchEstadoActualEmpleado = useCallback(
     async (empId) => {
@@ -133,10 +142,12 @@ export function useAsistenciaAdminLogic({
 
         setModalEstadoActual(est);
         setModalAsistencia(data.asistencia || null);
+
       } catch (err) {
         console.warn("Modal estado error:", err);
         setModalEstadoActual("sin_entrada");
         setModalAsistencia(null);
+
       } finally {
         setModalLoading(false);
       }
@@ -144,8 +155,10 @@ export function useAsistenciaAdminLogic({
     [token, API_URL]
   );
 
+
   // ===============================
-  //  HISTORIAL POR RANGO
+  //  HISTORIAL + RESUMEN + TURNO
+  //  (desde /asistencias/rango)
   // ===============================
   const fetchAsistenciasRango = async (usuario_id, from, to) => {
     if (!from || !to) return toast.error("Seleccioná un rango válido");
@@ -158,15 +171,21 @@ export function useAsistenciaAdminLogic({
 
       const data = await res.json();
 
-      if (res.ok) setHistorial(data.data || []);
-      else throw new Error();
+      if (!res.ok) throw new Error();
+
+      // 🔵 Datos ya procesados por el backend
+      setHistorial(data.dia_a_dia || []);
+      setResumenRangoAdmin(data.resumen || null);
+      setTurnoReporteAdmin(data.turno || null);
+
     } catch {
       toast.error("No se pudo cargar el historial");
     }
   };
 
+
   // ===============================
-  //  REFRESH MANUAL
+  //  REFRESH
   // ===============================
   const refreshManualmente = async () => {
     try {
@@ -178,13 +197,15 @@ export function useAsistenciaAdminLogic({
       ]);
 
       toast.success("Datos actualizados");
+
     } catch {
       toast.error("Error al actualizar");
     }
   };
 
+
   // ===============================
-  //  EXPORTAR CSV
+  //  CSV
   // ===============================
   const exportarCSV = () => {
     const headers = ["ID", "Nombre", "Email", "Rol", "Sucursal"];
@@ -193,7 +214,7 @@ export function useAsistenciaAdminLogic({
       e.nombre,
       e.email,
       e.role || e.rol,
-      (sucursales.find((s) => s.id === e.sucursal_id)?.nombre || "—"),
+      sucursales.find((s) => s.id === e.sucursal_id)?.nombre || "—",
     ]);
 
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
@@ -208,8 +229,9 @@ export function useAsistenciaAdminLogic({
     URL.revokeObjectURL(url);
   };
 
+
   // ===============================
-  //  IMPRIMIR TABLA
+  //  IMPRIMIR
   // ===============================
   const imprimirTabla = () => {
     const w = window.open("", "_blank");
@@ -223,9 +245,7 @@ export function useAsistenciaAdminLogic({
         <td>${e.nombre}</td>
         <td>${e.email}</td>
         <td>${e.role || e.rol}</td>
-        <td>${
-          sucursales.find((s) => s.id === e.sucursal_id)?.nombre || "—"
-        }</td>
+        <td>${sucursales.find((s) => s.id === e.sucursal_id)?.nombre || "—"}</td>
       </tr>`
       )
       .join("");
@@ -241,8 +261,9 @@ export function useAsistenciaAdminLogic({
     w.print();
   };
 
+
   // ===============================
-  //  RETORNO AL CONTROLADOR PRINCIPAL
+  //  RETORNO
   // ===============================
   return {
     estadoEmpleados,
@@ -259,9 +280,12 @@ export function useAsistenciaAdminLogic({
     modalAsistencia,
 
     historial,
+    resumenRangoAdmin,
     rangoFechas,
     setRangoFechas,
     fetchAsistenciasRango,
+
+    turnoReporteAdmin,
 
     busqueda,
     setBusqueda,
