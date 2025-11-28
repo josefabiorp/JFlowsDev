@@ -11,6 +11,7 @@ import { HomePage } from '../../HomePage.jsx';
 import { Settings } from '../activity/Settings.jsx';
 import { ResetPassword } from '../activity/ResetPassword.jsx';
 import { ForgotPassword } from '../activity/ForgotPassword.jsx';
+import Chat from '../activity/Chat.jsx';
 
 import { Sidebar } from '../Sidebar.jsx';
 import { MantenimientoUsuarios } from '../activity/MantenimientoUsuarios.jsx';
@@ -155,7 +156,22 @@ export function RouteMain() {
           </ProtectedRoute>
         } />
 
+        {/* ================================
+    🔥 RUTA CORPORATIVA: CHAT INTERNO
+    admin ↔ empleado
+================================ */}
+<Route path="/Chat" element={
+  <ProtectedRoute>
+      <Chat />
+  </ProtectedRoute>
+} />
+
+
       </Routes>
     </Router>
   );
+
+
+
+  
 }

@@ -98,6 +98,17 @@ export function Sidebar({ logout }) {
             link: "/mantenimientousuarios",
             roles: ["admin"],
         },
+
+
+
+{
+  title: "Comunicación interna",
+  src: "Proveedores",
+  link: "/Chat",
+  roles: ["admin", "empleado"],
+},
+
+
         {
             title: "Políticas de Empresa",
             src: "PoliticasEmpresa",
