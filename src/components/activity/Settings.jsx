@@ -2,27 +2,27 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 
-// Hooks y layout existentes (se mantienen igual)
 import { useUser } from "../hooks/UserContext";
 import { useProfileForm } from "../hooks/useProfileForm";
 import { useUpdateProfile } from "../hooks/useUpdateProfile";
 import { useAccountManagement } from "../hooks/useAccountManagement";
+
 import { Header } from "../Header.jsx";
 import { Footer } from "../Footer.jsx";
 import { Sidebar } from "../Sidebar.jsx";
+
 import "../../index.css";
 
-/**
- * SETTINGS — versión corporativa
- * - Mantiene TODA la lógica y API original via tus hooks
- * - UI tipo suite empresarial: cards, toasts, transiciones, accesibilidad
- * - Avatar editable con vista previa y validación de imagen
- * - Modal Danger Zone para eliminar cuenta
- */
+/* ============================================================
+   SETTINGS — 100% responsive + full corporate UI
+   (SIN tocar tu lógica)
+============================================================ */
+
 export function Settings() {
   const { user, setUser, token, setToken } = useUser();
   const { formData, handleChange, reset: resetFormFromHook } = useProfileForm(user);
-  const { error, success, updateProfile, isLoading: isSaving } = useUpdateProfile(token, setUser, setToken);
+  const { error, success, updateProfile, isLoading: isSaving } =
+    useUpdateProfile(token, setUser, setToken);
   const { deleteAccount, logout } = useAccountManagement(setUser, setToken);
 
   const [editMode, setEditMode] = useState(false);
@@ -32,18 +32,25 @@ export function Settings() {
 
   const fileInputRef = useRef(null);
 
-  // ──────────────────────────────────────────────────────────────
-  // Helpers
-  const roleLabel = useMemo(() => ({
-    admin: "Administrador",
-    contador: "Contador",
-    empleado: "Empleado",
-  })[String(user?.role || "").toLowerCase()] || user?.role || "—", [user]);
+  /* Helpers */
+
+  const roleLabel = useMemo(
+    () =>
+      (
+        {
+          admin: "Administrador",
+          contador: "Contador",
+          empleado: "Empleado",
+        }[String(user?.role || "").toLowerCase()] || user?.role || "—"
+      ),
+    [user]
+  );
 
   const validateImage = (file) => {
     if (!file) return true;
     const isValidType = /image\/(jpeg|jpg|png|gif|webp)/i.test(file.type);
-    const isValidSize = file.size <= 2 * 1024 * 1024; // 2 MB
+    const isValidSize = file.size <= 2 * 1024 * 1024;
+
     if (!isValidType) {
       toast.error("Formato no permitido. Usa JPEG, PNG, GIF o WebP.");
       return false;
@@ -59,8 +66,8 @@ export function Settings() {
 
   const onImageChange = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    if (!validateImage(file)) return;
+    if (!file || !validateImage(file)) return;
+
     setProfileImage(file);
     const url = URL.createObjectURL(file);
     setImagePreview(url);
@@ -68,28 +75,20 @@ export function Settings() {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    const toastId = toast.loading("Guardando cambios…");
+    const tId = toast.loading("Guardando cambios…");
     await updateProfile(formData, profileImage);
-    toast.dismiss(toastId);
+    toast.dismiss(tId);
     setEditMode(false);
   };
 
-const handleCancelEdit = () => {
-  // 🛡️ Solo llamar reset si realmente existe
-  if (typeof resetFormFromHook === "function") {
-    resetFormFromHook(user); // vuelve a poner los valores originales del usuario
-  }
+  const handleCancelEdit = () => {
+    if (typeof resetFormFromHook === "function") resetFormFromHook(user);
 
-  // Limpiar imagen temporal
-  setProfileImage(null);
-  if (imagePreview) {
-    URL.revokeObjectURL(imagePreview);
-  }
-  setImagePreview(null);
-
-  // Salir de modo edición
-  setEditMode(false);
-};
+    setProfileImage(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+    setEditMode(false);
+  };
 
   useEffect(() => {
     if (success) toast.success(success);
@@ -107,25 +106,35 @@ const handleCancelEdit = () => {
     );
   }
 
+  /* ============================================================
+     RENDER – Sidebar EXACTO a RegistroAsistencias
+  ============================================================ */
+
   return (
     <>
       <Header />
 
-      <div className="min-h-screen bg-slate-100 flex">
-        {/* Sidebar */}
-        <aside className="w-full lg:w-1/4 shrink-0">
+      <div className="flex bg-gray-100 min-h-screen">
+        
+        {/* === SIDEBAR EXACTO === */}
+        <div className="w-1/4 lg:mr-10">
           <Sidebar logout={logout} />
-        </aside>
+        </div>
 
-        {/* Main */}
-        <main className="flex-1 p-4 lg:p-8">
-          <div className="max-w-7xl mx-auto grid gap-6 lg:grid-cols-12">
-            {/* Panel resumen */}
+        {/* === CONTENIDO PRINCIPAL === */}
+        <div className="flex-1 p-4 md:p-8">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            {/* PANEL IZQUIERDO */}
             <section className="lg:col-span-4">
-              <Card>
+              
+              {/* PERFIL */}
+              <Card className="w-full">
                 <div className="flex items-start gap-4">
+
+                  {/* Avatar */}
                   <div className="relative">
-                    <div className="w-28 h-28 rounded-full bg-slate-200 overflow-hidden ring-4 ring-white shadow">
+                    <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-slate-200 overflow-hidden ring-4 ring-white shadow">
                       {imagePreview || user?.profile_image ? (
                         <img
                           src={imagePreview || user.profile_image}
@@ -133,27 +142,29 @@ const handleCancelEdit = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <svg className="w-full h-full text-slate-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                          <path fillRule="evenodd" d="M12 12a5 5 0 100-10 5 5 0 000 10zm7 9a7 7 0 10-14 0h14z" clipRule="evenodd" />
+                        <svg
+                          className="w-full h-full text-slate-400"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M12 12a5 5 0 100-10 5 5 0 000 10zm7 9a7 7 0 10-14 0h14z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
                     </div>
 
-             
-
-
-
-                    {/* Botón Cambiar (solo en modo edición) */}
-{editMode && (
-  <button
-    type="button"
-    onClick={onPickImage}
-    className="absolute -bottom-2 right-0 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 py-1.5 shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-600"
-    aria-label="Cambiar imagen de perfil"
-  >
-    Cambiar
-  </button>
-)}
+                    {editMode && (
+                      <button
+                        type="button"
+                        onClick={onPickImage}
+                        className="absolute -bottom-2 right-0 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 py-1.5 shadow"
+                      >
+                        Cambiar
+                      </button>
+                    )}
 
                     <input
                       ref={fileInputRef}
@@ -164,70 +175,86 @@ const handleCancelEdit = () => {
                     />
                   </div>
 
+                  {/* Datos */}
                   <div className="flex-1">
                     <h1 className="text-2xl font-bold text-slate-900">
                       Hola, {user.nombre}
                     </h1>
-                    <p className="text-slate-600 mt-1">Rol: <span className="font-medium">{roleLabel}</span></p>
 
-                    <div className="flex flex-wrap gap-2 mt-4">
-  {!editMode ? (
-    <>
-      {/* SOLO mostrar Editar perfil */}
-      <button
-        type="button"
-        onClick={() => setEditMode(true)}
-        className="btn-primary"
-      >
-        Editar perfil
-      </button>
-    </>
-  ) : (
-    <>
-      {/* BOTONES QUE SOLO EXISTEN EN MODO EDICIÓN */}
-      <button
-        type="button"
-        onClick={handleCancelEdit}
-        className="btn-ghost"
-      >
-        Cancelar
-      </button>
+                    <p className="text-slate-600 mt-1">
+                      Rol: <span className="font-medium">{roleLabel}</span>
+                    </p>
 
-      <button
-        type="submit"
-        form="settings-form"
-        disabled={isSaving}
-        className="btn-primary disabled:opacity-60"
-      >
-        {isSaving ? "Guardando…" : "Guardar cambios"}
-      </button>
-    </>
-  )}
-</div>
+                    <div className="flex flex-wrap gap-2 mt-4 w-full">
+                      {!editMode ? (
+                        <button
+                          type="button"
+                          onClick={() => setEditMode(true)}
+                          className="btn-primary"
+                        >
+                          Editar perfil
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="btn-ghost"
+                          >
+                            Cancelar
+                          </button>
 
+                          <button
+                            type="submit"
+                            form="settings-form"
+                            className="btn-primary disabled:opacity-60"
+                            disabled={isSaving}
+                          >
+                            {isSaving ? "Guardando…" : "Guardar cambios"}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
 
-              {/* Bloque informativo */}
-              <Card className="mt-6">
-                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Cuenta</h3>
+              {/* INFO */}
+              <Card className="mt-6 w-full">
+                <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
+                  Cuenta
+                </h3>
+
                 <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                  <li><span className="text-slate-500">Correo:</span> {user.email}</li>
-                  <li><span className="text-slate-500">Cédula:</span> {user.cedula}</li>
+                  <li>
+                    <span className="text-slate-500">Correo:</span> {user.email}
+                  </li>
+                  <li>
+                    <span className="text-slate-500">Cédula:</span> {user.cedula}
+                  </li>
                 </ul>
               </Card>
             </section>
 
-            {/* Formulario edición */}
+            {/* PANEL DERECHO */}
             <section className="lg:col-span-8">
-              <Card>
+              
+              <Card className="w-full">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-slate-900">Datos de perfil</h2>
-                  {!editMode && <span className="text-xs text-slate-500">Solo lectura</span>}
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Datos de perfil
+                  </h2>
+
+                  {!editMode && (
+                    <span className="text-xs text-slate-500">Solo lectura</span>
+                  )}
                 </div>
 
-                <form id="settings-form" onSubmit={handleUpdateProfile} className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form
+                  id="settings-form"
+                  onSubmit={handleUpdateProfile}
+                  className="mt-6 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4"
+                >
                   <Field label="Nombre" htmlFor="nombre">
                     <input
                       id="nombre"
@@ -237,7 +264,6 @@ const handleCancelEdit = () => {
                       onChange={handleChange}
                       required
                       disabled={!editMode}
-                      autoComplete="name"
                       className="input"
                     />
                   </Field>
@@ -251,7 +277,6 @@ const handleCancelEdit = () => {
                       onChange={handleChange}
                       required
                       disabled={!editMode}
-                      autoComplete="email"
                       className="input"
                     />
                   </Field>
@@ -265,25 +290,25 @@ const handleCancelEdit = () => {
                       onChange={handleChange}
                       required
                       disabled={!editMode}
-                      autoComplete="off"
                       className="input"
                     />
                   </Field>
 
-                  <div className="grid gap-6">
-                    <Field label="Contraseña actual" htmlFor="current_password" helper="Requerida si deseas cambiar la contraseña.">
-                      <input
-                        id="current_password"
-                        name="current_password"
-                        type="password"
-                        value={formData.current_password || ""}
-                        onChange={handleChange}
-                        disabled={!editMode}
-                        autoComplete="current-password"
-                        className="input"
-                      />
-                    </Field>
-                  </div>
+                  <Field
+                    label="Contraseña actual"
+                    htmlFor="current_password"
+                    helper="Requerida para cambiar la contraseña."
+                  >
+                    <input
+                      id="current_password"
+                      name="current_password"
+                      type="password"
+                      value={formData.current_password || ""}
+                      onChange={handleChange}
+                      disabled={!editMode}
+                      className="input"
+                    />
+                  </Field>
 
                   <Field label="Nueva contraseña" htmlFor="password">
                     <input
@@ -293,12 +318,14 @@ const handleCancelEdit = () => {
                       value={formData.password || ""}
                       onChange={handleChange}
                       disabled={!editMode}
-                      autoComplete="new-password"
                       className="input"
                     />
                   </Field>
 
-                  <Field label="Confirmar nueva contraseña" htmlFor="password_confirmation">
+                  <Field
+                    label="Confirmar contraseña"
+                    htmlFor="password_confirmation"
+                  >
                     <input
                       id="password_confirmation"
                       name="password_confirmation"
@@ -306,53 +333,74 @@ const handleCancelEdit = () => {
                       value={formData.password_confirmation || ""}
                       onChange={handleChange}
                       disabled={!editMode}
-                      autoComplete="new-password"
                       className="input"
                     />
                   </Field>
 
-                  {/* Separador y botones en móviles */}
+                  {/* Botones móviles */}
                   <div className="md:col-span-2 flex md:hidden gap-3 pt-2">
                     {editMode ? (
                       <>
-                        <button type="button" onClick={handleCancelEdit} className="btn-ghost flex-1">Cancelar</button>
-                        <button type="submit" disabled={isSaving} className="btn-primary flex-1">{isSaving ? "Guardando…" : "Guardar"}</button>
+                        <button onClick={handleCancelEdit} type="button" className="btn-ghost w-full">
+                          Cancelar
+                        </button>
+                        <button type="submit" disabled={isSaving} className="btn-primary w-full">
+                          {isSaving ? "Guardando…" : "Guardar"}
+                        </button>
                       </>
                     ) : (
-                      <button type="button" onClick={() => setEditMode(true)} className="btn-primary w-full">Editar</button>
+                      <button
+                        type="button"
+                        onClick={() => setEditMode(true)}
+                        className="btn-primary w-full"
+                      >
+                        Editar
+                      </button>
                     )}
                   </div>
                 </form>
               </Card>
 
-              {/* Danger Zone */}
-              <Card className="mt-6 border-pink-200">
+              {/* DANGER ZONE */}
+              <Card className="mt-6 border-pink-200 w-full">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-pink-700 uppercase tracking-wide">Zona de riesgo</h3>
+                  <h3 className="text-sm font-semibold text-pink-700 uppercase tracking-wide">
+                    Zona de riesgo
+                  </h3>
+
                   <button
                     type="button"
                     onClick={() => setShowConfirmDelete(true)}
-                    className="px-3 py-1.5 text-sm font-medium rounded-lg bg-pink-600 text-white hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-600"
+                    className="px-3 py-1.5 text-sm font-medium rounded-lg bg-pink-600 text-white hover:bg-pink-700"
                   >
                     Eliminar cuenta
                   </button>
                 </div>
-                <p className="text-sm text-slate-600 mt-2">Esta acción es permanente y no se puede deshacer.</p>
+
+                <p className="text-sm text-slate-600 mt-2">
+                  Esta acción es permanente.
+                </p>
               </Card>
+
             </section>
           </div>
-        </main>
+        </div>
       </div>
 
       <Footer />
 
-      {/* Modal Confirmación Eliminar */}
+      {/* MODAL ELIMINAR */}
       <AnimatePresence>
         {showConfirmDelete && (
           <Modal onClose={() => setShowConfirmDelete(false)}>
             <div className="text-center">
-              <h4 className="text-lg font-semibold text-slate-900">¿Seguro que deseas eliminar tu cuenta?</h4>
-              <p className="text-slate-600 mt-2">Tu perfil y datos asociados serán eliminados.</p>
+              <h4 className="text-lg font-semibold text-slate-900">
+                ¿Seguro que deseas eliminar tu cuenta?
+              </h4>
+
+              <p className="text-slate-600 mt-2">
+                Esta acción es permanente.
+              </p>
 
               <div className="mt-6 flex flex-col sm:flex-row gap-2 justify-center">
                 <button
@@ -362,16 +410,17 @@ const handleCancelEdit = () => {
                     try {
                       await deleteAccount(token);
                       toast.success("Cuenta eliminada");
-                    } catch (e) {
-                      toast.error("No se pudo eliminar la cuenta");
+                    } catch {
+                      toast.error("Error al eliminar");
                     } finally {
                       toast.dismiss(id);
                     }
                   }}
-                  className="w-full sm:w-auto px-4 py-2 rounded-lg bg-pink-600 hover:bg-pink-700 text-white"
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg bg-pink-600 text-white hover:bg-pink-700"
                 >
                   Eliminar definitivamente
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setShowConfirmDelete(false)}
@@ -388,8 +437,10 @@ const handleCancelEdit = () => {
   );
 }
 
-// ──────────────────────────────────────────────────────────────
-// UI Primitives (Cards, Field, Modal) — Tailwind helpers
+/* ============================================================
+   UI PRIMITIVES 
+============================================================ */
+
 function Card({ children, className = "" }) {
   return (
     <motion.section
@@ -416,24 +467,22 @@ function Field({ label, htmlFor, helper, children }) {
 function Modal({ children, onClose }) {
   return (
     <motion.div
-      className="fixed inset-0 z-50"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
       <div
         onClick={onClose}
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]"
-        aria-hidden
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
       />
+
       <motion.div
         initial={{ y: 16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 16, opacity: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="relative max-w-lg mx-auto mt-24 bg-white rounded-2xl shadow-xl border border-slate-200 p-6"
-        role="dialog"
-        aria-modal="true"
+        className="relative w-full max-w-sm sm:max-w-md bg-white rounded-2xl shadow-xl p-6"
       >
         {children}
       </motion.div>
@@ -441,17 +490,16 @@ function Modal({ children, onClose }) {
   );
 }
 
-// ──────────────────────────────────────────────────────────────
-// Tailwind utility classes (evita repetir clases largas)
-// Puedes moverlas a un CSS si usas @apply.
+/* ============================================================
+   Tailwind Utilities Inline
+============================================================ */
+
 const styles = `
 .btn-primary { @apply inline-flex items-center justify-center rounded-lg bg-sky-700 hover:bg-sky-800 text-white px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-700; }
 .btn-ghost   { @apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300; }
 .input       { @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-sky-600 focus:ring-2 focus:ring-sky-200 disabled:opacity-70; }
 `;
 
-// Inyecta el bloque de utilidades anteriores al DOM (opcional, útil si no usas @apply)
-// Si prefieres, copia estas utilidades a tu index.css con @layer components.
 (function injectInlineUtilities() {
   if (typeof document === "undefined") return;
   const id = "settings-styles-inline";

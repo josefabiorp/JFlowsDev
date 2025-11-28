@@ -141,42 +141,42 @@ export function MantenimientoUsuarios() {
     }
   };
 
- const handleUpdate = async (e) => {
-  e.preventDefault();
+  const handleUpdate = async (e) => {
+    e.preventDefault();
 
-  try {
-    const res = await fetch(`${API_URL}/admin/usuarios/${editingUsuario}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        nombre: formData.nombre,
-        email: formData.email,
-        cedula: formData.cedula,
-        empresa_id: user.empresa_id,
-        sucursal_id: formData.sucursal_id,
-        role: formData.role,
-      }),
-    });
+    try {
+      const res = await fetch(`${API_URL}/admin/usuarios/${editingUsuario}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nombre: formData.nombre,
+          email: formData.email,
+          cedula: formData.cedula,
+          empresa_id: user.empresa_id,
+          sucursal_id: formData.sucursal_id,
+          role: formData.role,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      toast.error("Error al actualizar el usuario");
-      console.log(data);
-      return;
+      if (!res.ok) {
+        toast.error("Error al actualizar el usuario");
+        console.log(data);
+        return;
+      }
+
+      toast.success("Usuario actualizado correctamente");
+      fetchUsuarios();
+      resetForm();
+    } catch (err) {
+      toast.error("No se pudo conectar con el servidor");
+      console.error(err);
     }
-
-    toast.success("Usuario actualizado correctamente");
-    fetchUsuarios();
-    resetForm();
-  } catch (err) {
-    toast.error("No se pudo conectar con el servidor");
-    console.error(err);
-  }
-};
+  };
 
   const handleDelete = async (id) => {
     if (!window.confirm("¿Seguro que deseas eliminar este usuario?")) return;
@@ -243,12 +243,8 @@ export function MantenimientoUsuarios() {
     const sucursalData = {
       ...newSucursal,
       empresa_id: user.empresa_id,
-      latitud: newSucursal.latitud
-        ? parseFloat(newSucursal.latitud)
-        : null,
-      longitud: newSucursal.longitud
-        ? parseFloat(newSucursal.longitud)
-        : null,
+      latitud: newSucursal.latitud ? parseFloat(newSucursal.latitud) : null,
+      longitud: newSucursal.longitud ? parseFloat(newSucursal.longitud) : null,
     };
 
     try {
@@ -298,13 +294,17 @@ export function MantenimientoUsuarios() {
   return (
     <>
       <Header />
-      <div className="flex flex-col lg:flex-row bg-slate-200 min-h-screen">
-        <div className="w-full lg:w-1/4">
+
+      {/* ⬇️ Layout A — igual que RegistroAsistencias y Settings */}
+      <div className="flex bg-gray-100 min-h-screen">
+        {/* Sidebar a la izquierda */}
+        <div className="w-1/4 lg:mr-10">
           <Sidebar logout={logout} />
         </div>
 
-        <div className="flex-1 p-6 lg:p-10">
-          <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-8 transition-all duration-300 hover:shadow-xl">
+        {/* Contenido principal */}
+        <div className="flex-1 p-4 md:p-8">
+          <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6 md:p-8 transition-all duration-300 hover:shadow-xl">
             <h1 className="text-3xl font-bold text-sky-900 mb-8 text-center">
               {editingUsuario ? "Actualizar Usuario" : "Registrar Usuario"}
             </h1>
@@ -419,18 +419,13 @@ export function MantenimientoUsuarios() {
               <table className="min-w-full border border-gray-200 text-sm rounded-lg overflow-hidden">
                 <thead className="bg-gray-100 text-gray-700 uppercase">
                   <tr>
-                    {[
-                      "ID",
-                      "Nombre",
-                      "Email",
-                      "Rol",
-                      "Sucursal",
-                      "Acciones",
-                    ].map((h) => (
-                      <th key={h} className="border px-4 py-2 text-left">
-                        {h}
-                      </th>
-                    ))}
+                    {["ID", "Nombre", "Email", "Rol", "Sucursal", "Acciones"].map(
+                      (h) => (
+                        <th key={h} className="border px-4 py-2 text-left">
+                          {h}
+                        </th>
+                      )
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -604,9 +599,7 @@ function MapSelector({ lat, lng, setNewSucursal }) {
   };
 
   const hasCoords = lat && lng;
-  const markerPos = hasCoords
-    ? [parseFloat(lat), parseFloat(lng)]
-    : null;
+  const markerPos = hasCoords ? [parseFloat(lat), parseFloat(lng)] : null;
 
   return (
     <MapContainer

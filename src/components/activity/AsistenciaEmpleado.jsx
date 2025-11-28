@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useEffect } from "react";
-import QrScanner from "react-qr-scanner";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
-import { FaSignInAlt, FaSignOutAlt, FaCoffee, FaQrcode } from "react-icons/fa";
+import { FaSignInAlt, FaSignOutAlt } from "react-icons/fa";
 
 import { API_URL } from "../../config/api";
 import { minutesToLabel } from "../utils/timeUtils.js";
@@ -11,12 +10,10 @@ import { buildStaticMapUrl } from "../utils/mapUtils.js";
 import { useAsignacionTurnos } from "../hooks/useAsignacionTurnos.js";
 
 // ======================================================
-// NUEVO: Formateo corporativo de horas
+// Formateo corporativo de horas
 // ======================================================
 const formatHour = (value) => {
   if (!value) return "—";
-
-  // Si ya viene como "14:00:00"
   if (/^\d{2}:\d{2}/.test(value)) {
     const [h, m] = value.split(":");
     const date = new Date();
@@ -26,11 +23,8 @@ const formatHour = (value) => {
       minute: "2-digit",
     });
   }
-
-  // Si viene con fecha completa
   const d = new Date(value);
   if (isNaN(d)) return value;
-
   return d.toLocaleTimeString("es-CR", {
     hour: "numeric",
     minute: "2-digit",
@@ -44,13 +38,9 @@ export function AsistenciaEmpleado({
   resumenAsistencia,
   resumenAvanzado,
   politicas,
-  descansos,
-  descansoActivo,
   sucursalEmpleado,
   marcarEntrada,
   marcarSalida,
-  iniciarDescanso,
-  finalizarDescanso,
   getWeekRange,
   getMonthRange,
   getYearRange,
@@ -58,52 +48,32 @@ export function AsistenciaEmpleado({
   setShowReportModal,
   turnoEmpleadoModal,
 }) {
-
   // ======================================================
   // ESTADOS LOCALES
   // ======================================================
-  const [showQrScanner, setShowQrScanner] = useState(false);
   const [busyEntrada, setBusyEntrada] = useState(false);
   const [busySalida, setBusySalida] = useState(false);
-  const [busyDescanso, setBusyDescanso] = useState(false);
 
   // ======================================================
-  // TURNO ASIGNADO DEL EMPLEADO
+  // TURNO ASIGNADO
   // ======================================================
   const { obtenerTurnoEmpleado } = useAsignacionTurnos(API_URL, token, user);
   const [turnoEmpleado, setTurnoEmpleado] = useState(null);
 
   useEffect(() => {
     if (!user?.id) return;
-
     obtenerTurnoEmpleado(user.id)
       .then((t) => setTurnoEmpleado(t))
       .catch(() => setTurnoEmpleado(null));
   }, [user?.id]);
 
   // ======================================================
-  // SCAN QR
-  // ======================================================
-  const handleScan = (data) => {
-    if (!data) return;
-    const scanned = data.text;
-    const id = isNaN(Number(scanned)) ? user.id : Number(scanned);
-
-    setBusyEntrada(true);
-    marcarEntrada(id).finally(() => setBusyEntrada(false));
-    setShowQrScanner(false);
-  };
-
-  const handleError = (err) => console.error("QR error:", err);
-
-  // ======================================================
   // RENDER
   // ======================================================
   return (
     <>
-      {/* CONTENEDOR PRINCIPAL */}
       <div className="bg-white p-6 rounded-xl shadow mb-6 text-center">
-
+        
         {/* ESTADO */}
         <div className="mb-3">
           <span
@@ -123,7 +93,7 @@ export function AsistenciaEmpleado({
           </span>
         </div>
 
-        {/* ============ NUEVO BLOQUE: TURNO DEL EMPLEADO ============== */}
+        {/* TURNO DEL EMPLEADO */}
         {turnoEmpleado && (
           <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-left mx-auto max-w-md shadow">
             <h3 className="text-blue-800 font-bold text-lg mb-2">
@@ -132,7 +102,6 @@ export function AsistenciaEmpleado({
 
             <p><strong>Nombre:</strong> {turnoEmpleado.nombre}</p>
 
-            {/* Cambiado SOLO esta línea */}
             <p>
               <strong>Horario:</strong>{" "}
               {formatHour(turnoEmpleado.hora_inicio)} – {formatHour(turnoEmpleado.hora_fin)}
@@ -151,32 +120,9 @@ export function AsistenciaEmpleado({
           </div>
         )}
 
-        {/* QR */}
-        <div className="mt-5 flex justify-center">
-          <button
-            onClick={() => setShowQrScanner(!showQrScanner)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow"
-          >
-            <FaQrcode />
-            {showQrScanner ? "Cerrar QR" : "Marcar con QR"}
-          </button>
-        </div>
-
-        {showQrScanner && (
-          <div className="mt-5 border rounded-xl p-5 bg-gray-50 shadow-inner flex flex-col justify-center items-center gap-2">
-            <QrScanner
-              delay={300}
-              style={{ height: 240, width: 320 }}
-              onError={handleError}
-              onScan={handleScan}
-            />
-          </div>
-        )}
-
         {/* BOTONES ENTRADA / SALIDA */}
         <div className="flex justify-center pt-6 gap-4 flex-wrap mb-4">
-
-          {/* ENTRADA */}
+          
           <button
             onClick={async () => {
               setBusyEntrada(true);
@@ -193,7 +139,6 @@ export function AsistenciaEmpleado({
             <FaSignInAlt /> Entrada
           </button>
 
-          {/* SALIDA */}
           <button
             onClick={async () => {
               setBusySalida(true);
@@ -209,6 +154,7 @@ export function AsistenciaEmpleado({
           >
             <FaSignOutAlt /> Salida
           </button>
+
         </div>
 
         {/* RESUMEN ASISTENCIA */}
@@ -230,14 +176,9 @@ export function AsistenciaEmpleado({
               .
             </p>
 
-            {resumenAsistencia.total && (
-              <p className="text-green-700 font-bold text-xl mt-3">
-                Total (sin política): {resumenAsistencia.total}
-              </p>
-            )}
-
             {resumenAvanzado && resumenAvanzado.totalMin != null && (
               <div className="mt-4 text-sm text-left bg-sky-50 border border-sky-100 rounded-xl p-4">
+
                 <p>
                   <span className="font-semibold">Total trabajado:</span>{" "}
                   {minutesToLabel(resumenAvanzado.totalMin)}
@@ -254,24 +195,6 @@ export function AsistenciaEmpleado({
                   </span>{" "}
                   {minutesToLabel(resumenAvanzado.totalMinAjustado)}
                 </p>
-
-                <p>
-                  <span className="font-semibold">Descansos tomados:</span>{" "}
-                  {minutesToLabel(resumenAvanzado.minutosDescansoTomados)}
-                </p>
-
-                {resumenAvanzado.excesoDescansoMin > 0 && (
-                  <p className="text-red-600 font-semibold">
-                    Exceso de descansos: {minutesToLabel(resumenAvanzado.excesoDescansoMin)}
-                  </p>
-                )}
-
-                {resumenAvanzado.horasExtraMin > 0 && (
-                  <p className="text-amber-600 font-semibold mt-1">
-                    Horas extra (limitadas por política):{" "}
-                    {minutesToLabel(resumenAvanzado.horasExtraMin)}
-                  </p>
-                )}
               </div>
             )}
 
@@ -304,7 +227,7 @@ export function AsistenciaEmpleado({
         {/* INFO SUCURSAL */}
         {sucursalEmpleado && (
           <div className="mt-6 flex justify-center items-center">
-            <div className="bg-white rounded-xl shadow-md p-6 text-left border border-gray-200 w-1/2 h-1/2 flex flex-col justify-start overflow-auto">
+            <div className="bg-white rounded-xl shadow-md p-6 text-left border border-gray-200 w-1/2 flex flex-col justify-start overflow-auto">
               <h2 className="text-xl font-bold text-sky-800 mb-2">
                 📍 Tu sucursal
               </h2>
@@ -347,94 +270,7 @@ export function AsistenciaEmpleado({
             </div>
           </div>
         )}
-      </div>
 
-      {/* TABS ASISTENCIA / DESCANSOS */}
-      <div className="flex justify-center mb-6 border-b border-gray-300">
-        <button className="px-6 py-3 font-semibold border-b-4 border-blue-600 text-blue-600">
-          🕒 Asistencia
-        </button>
-
-        <button className="px-6 py-3 font-semibold text-gray-500">
-          ☕ Descansos
-        </button>
-      </div>
-
-      {/* DESCANSOS */}
-      <div className="space-y-6 text-center">
-        <h3 className="text-lg font-semibold text-gray-700">
-          Registrar Descanso
-        </h3>
-
-        {descansoActivo && (
-          <div className="mx-auto max-w-md bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-left">
-            <p className="font-semibold text-amber-800">Descanso en curso</p>
-            <p className="text-amber-900">
-              Tipo: {descansoActivo.tipo} · Inicio: {descansoActivo.hora_inicio}
-            </p>
-            <button
-              onClick={finalizarDescanso}
-              className="mt-3 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs"
-            >
-              Finalizar descanso
-            </button>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 justify-center mt-4">
-          {/* CAFÉ */}
-          <button
-            onClick={async () => {
-              setBusyDescanso(true);
-              await iniciarDescanso("Café");
-              setBusyDescanso(false);
-            }}
-            disabled={busyDescanso}
-            className="bg-yellow-500 text-white px-4 py-3 rounded-xl font-semibold hover:bg-yellow-600 transition flex items-center justify-center gap-2 disabled:opacity-60"
-          >
-            <FaCoffee /> Café
-          </button>
-        </div>
-
-        {/* LISTA DE DESCANSOS */}
-        <div className="mt-6 max-w-xl mx-auto text-left">
-          <h4 className="text-sm font-semibold text-gray-700 mb-2">
-            Tus últimos descansos
-          </h4>
-          <div className="border rounded-xl max-h-60 overflow-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-2 py-1 text-left">Tipo</th>
-                  <th className="px-2 py-1 text-left">Inicio</th>
-                  <th className="px-2 py-1 text-left">Fin</th>
-                  <th className="px-2 py-1 text-left">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {descansos.length > 0 ? (
-                  descansos.slice(0, 20).map((d) => (
-                    <tr key={d.id} className="border-t">
-                      <td className="px-2 py-1">{d.tipo}</td>
-                      <td className="px-2 py-1">{d.hora_inicio}</td>
-                      <td className="px-2 py-1">{d.hora_fin || "—"}</td>
-                      <td className="px-2 py-1 capitalize">{d.estado}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="px-2 py-3 text-center text-gray-500 italic"
-                    >
-                      No tenés descansos registrados.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     </>
   );

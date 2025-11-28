@@ -1,6 +1,6 @@
 // ===============================================================
 //  REGISTRO DE ASISTENCIAS — CONTROLADOR GENERAL (CORPORATIVO)
-//  Versión optimizada + DetalleEmpleadoModal profesional integrado
+//  Versión limpia: sin QR ni controles de descansos aquí
 // ===============================================================
 
 import React, {
@@ -17,7 +17,6 @@ import { API_URL } from "../../config/api.js";
 import { useUser } from "../hooks/UserContext.jsx";
 import { useAccountManagement } from "../hooks/useAccountManagement.js";
 import { useAsistencias } from "../hooks/useAsistencia.js";
-import { useDescansos } from "../hooks/useDescansos.js";
 import { usePoliticas } from "../hooks/usePoliticas.js";
 
 // Componentes base
@@ -29,16 +28,14 @@ import { Sidebar } from "../Sidebar.jsx";
 import { DetalleEmpleadoModal } from "./asistencias/DetalleEmpleadoModal.jsx";
 import { ReporteEmpleadoModal } from "./asistencias/ReporteEmpleadoModal.jsx";
 
-// Utils
-import { formatTime } from "../utils/timeUtils";
-import { buildStaticMapUrl } from "../utils/mapUtils";
+// Utils (rango de fechas para reportes)
 import {
   getWeekRange,
   getMonthRange,
   getYearRange,
 } from "../utils/rangoFechasUtils";
 
-// Partes separadas (las dos UIs)
+// UIs específicas
 import { AsistenciaEmpleado } from "./AsistenciaEmpleado.jsx";
 import { AsistenciaAdmin } from "./AsistenciaAdmin.jsx";
 
@@ -63,14 +60,6 @@ export function RegistroAsistencias() {
     marcarEntrada,
     marcarSalida,
   } = useAsistencias(API_URL, token, user);
-
-  const {
-    descansos,
-    descansoActivo,
-    loadingDescansos,
-    iniciarDescanso,
-    finalizarDescanso,
-  } = useDescansos(API_URL, token, user);
 
   const {
     politicas,
@@ -303,8 +292,8 @@ export function RegistroAsistencias() {
   };
 
   // ===============================================================
-  //  ADMIN: abrir modal del empleado (AQUÍ EL CAMBIO PEQUEÑO)
-//  ===============================================================
+  //  ADMIN: abrir modal del empleado
+  // ===============================================================
   const abrirDetalleEmpleado = async (emp) => {
     setSelectedEmployee(emp);
 
@@ -314,7 +303,7 @@ export function RegistroAsistencias() {
     // Limpia historial previo
     setHistorial([]);
 
-    // 🔹 Nuevo: fijamos por defecto el rango en HOY
+    // Rango por defecto: HOY
     const hoy = new Date().toISOString().slice(0, 10);
     setRangoFechas({ from: hoy, to: hoy });
 
@@ -412,8 +401,9 @@ export function RegistroAsistencias() {
 
       const data = await res.json();
       if (!res.ok) throw new Error();
-      setReporte(data.dia_a_dia || data.data || []);
 
+      // Preferimos usar la estructura corporativa "dia_a_dia"
+      setReporte(data.dia_a_dia || data.data || []);
 
       setTurnoReporte(data.turno || null);
 
@@ -491,10 +481,6 @@ export function RegistroAsistencias() {
                   ? "aplicando políticas de la empresa"
                   : "usando valores por defecto"}
               </span>
-              <span>
-                Descansos:{" "}
-                {loadingDescansos ? "cargando…" : "sincronizados"}
-              </span>
             </div>
           </div>
 
@@ -522,13 +508,9 @@ export function RegistroAsistencias() {
               estadoActual={estadoActual}
               resumenAsistencia={resumenAsistencia}
               politicas={politicas}
-              descansos={descansos}
-              descansoActivo={descansoActivo}
               sucursalEmpleado={sucursalEmpleado}
               marcarEntrada={marcarEntrada}
               marcarSalida={marcarSalida}
-              iniciarDescanso={iniciarDescanso}
-              finalizarDescanso={finalizarDescanso}
               getWeekRange={getWeekRange}
               getMonthRange={getMonthRange}
               getYearRange={getYearRange}

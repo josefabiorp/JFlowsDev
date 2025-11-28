@@ -17,21 +17,33 @@ import bg1 from "../src/assets/bg1.jpg";
 
 export function LoadingPage() {
   return (
-    <div>
+    <div className="w-full overflow-x-hidden">
       <Header />
 
-      <ImgLoadingPage image={loadingpage} />
+      {/* Hero responsive */}
+      <div className="w-full">
+        <ImgLoadingPage image={loadingpage} />
+      </div>
 
-      <CardLoadingPage
-        image00={fast}
-        image01={efficient}
-        image02={calendar}
-        image03={users}
-      />
+      {/* Cards info responsive */}
+      <div className="w-full px-4 md:px-10 lg:px-20">
+        <CardLoadingPage
+          image00={fast}
+          image01={efficient}
+          image02={calendar}
+          image03={users}
+        />
+      </div>
 
-      <EndSectionLoad image={bg1} />
+      {/* Sección final */}
+      <div className="w-full">
+        <EndSectionLoad image={bg1} />
+      </div>
 
-      <PriceCard />
+      {/* Price card section */}
+      <div className="w-full px-4 md:px-10 lg:px-20 py-6">
+        <PriceCard />
+      </div>
 
       <Footer />
     </div>

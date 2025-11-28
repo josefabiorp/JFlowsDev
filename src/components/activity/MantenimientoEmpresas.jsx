@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 
 import { Header } from "../Header.jsx";
 import { Footer } from "../Footer.jsx";
-import { Sidebar } from "../Sidebar.jsx";
 import { useAccountManagement } from "../hooks/useAccountManagement.js";
 import { useUser } from "../hooks/UserContext.jsx";
 
@@ -102,7 +101,7 @@ export function MantenimientoEmpresas() {
         setDistritos(arr);
         setDistrito("");
       });
-  }, [canton]);
+  }, [canton, provincia]);
 
   // -----------------------------------------------------------
   // VALIDACIÓN HACIENDA
@@ -286,14 +285,13 @@ export function MantenimientoEmpresas() {
     <>
       <Header />
 
-      <div className="min-h-screen bg-slate-100 flex">
-        <aside className="w-full lg:w-1/4 shrink-0">
-          <Sidebar logout={logout} />
-        </aside>
+      <div className="min-h-screen bg-slate-100 flex flex-col lg:flex-row">
+    
 
+        {/* MAIN */}
         <main className="flex-1 p-4 lg:p-8">
           <div className="max-w-7xl mx-auto grid gap-6 lg:grid-cols-12">
-            {/* FORM */}
+            {/* FORMULARIO */}
             <section className="lg:col-span-5">
               <Card>
                 <div className="flex items-center justify-between mb-2">
@@ -514,7 +512,7 @@ export function MantenimientoEmpresas() {
               </Card>
             </section>
 
-            {/* TABLA */}
+            {/* TABLA EMPRESAS */}
             <section className="lg:col-span-7">
               <Card>
                 <div className="flex items-center justify-between mb-4">
@@ -543,7 +541,9 @@ export function MantenimientoEmpresas() {
                             <td className="border-b px-4 py-2 text-left">
                               {emp.nombre}
                             </td>
-                            <td className="border-b px-4 py-2">{emp.cedula_empresa}</td>
+                            <td className="border-b px-4 py-2">
+                              {emp.cedula_empresa}
+                            </td>
                             <td className="border-b px-4 py-2">
                               <button
                                 className="text-sky-700 hover:text-sky-900 text-xs mr-3"
@@ -585,7 +585,7 @@ export function MantenimientoEmpresas() {
 }
 
 // -----------------------------------------------------------
-// COMPONENTES UI — Mismos de Settings
+// COMPONENTES UI — Mismos estilos corporativos
 // -----------------------------------------------------------
 
 function Card({ children, className = "" }) {
@@ -631,3 +631,4 @@ const styles = `
   s.innerHTML = styles;
   document.head.appendChild(s);
 })();
+

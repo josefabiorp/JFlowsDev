@@ -8,7 +8,7 @@ import { useUser } from "./hooks/UserContext";
 import { usePermisos } from "./hooks/usePermisos";
 import { API_URL } from "../config/api";
 
-// ===== Íconos =====
+// Íconos
 import IconVentas from "../assets/Ventas.svg";
 import IconCompras from "../assets/Compras.svg";
 import IconUsuarios from "../assets/usuarios.svg";
@@ -17,11 +17,9 @@ import IconClientes from "../assets/Clientes.svg";
 import IconEstadisticas from "../assets/Estadisticas.svg";
 import IconConfiguracion from "../assets/Configuracion.svg";
 import IconCerrarSesion from "../assets/CerrarSesion.svg";
-
-// 🔥 Nuevo ícono
 import IconPoliticasEmpresa from "../assets/politicas.png";
 
-// ===== Mapa de íconos =====
+// Mapa
 const iconMap = {
     Ventas: IconVentas,
     Compras: IconCompras,
@@ -44,7 +42,6 @@ export function Sidebar({ logout }) {
 
     const handleClick = () => navigate("/");
 
-    // Permisos del admin
     const { pendientes, fetchPendientes } = usePermisos(API_URL, token, user);
 
     useEffect(() => {
@@ -53,7 +50,6 @@ export function Sidebar({ logout }) {
         }
     }, [isAdmin, token, user, fetchPendientes]);
 
-    // ===== Menú =====
     const Menus = [
         {
             title: "Registro de Asistencias",
@@ -81,34 +77,11 @@ export function Sidebar({ logout }) {
             roles: ["admin", "empleado"],
         },
         {
-            title: "Reportes y Estadísticas",
-            src: "Clientes",
-            link: "/MantenimientoClientes",
-            roles: ["admin"],
-        },
-        {
             title: "Comunicación interna",
-            src: "Proveedores",
-            link: "/MantenimientoProveedores",
-            roles: ["admin"],
+            src: "Clientes",
+            link: "/Chat",
+            roles: ["admin", "empleado"],
         },
-        {
-            title: "Documentación / Ayuda",
-            src: "usuarios",
-            link: "/mantenimientousuarios",
-            roles: ["admin"],
-        },
-
-
-
-{
-  title: "Comunicación interna",
-  src: "Proveedores",
-  link: "/Chat",
-  roles: ["admin", "empleado"],
-},
-
-
         {
             title: "Políticas de Empresa",
             src: "PoliticasEmpresa",
@@ -139,13 +112,15 @@ export function Sidebar({ logout }) {
                         : "lg:w-28 w-16 lg:bg-slate-50 lg:pb-[50rem]"
                 } transition-width lg:p-5 lg:pt-10 relative ease-in-out duration-300`}
             >
+
                 {/* Botón toggle */}
                 <img
                     src={controlImage}
-                    className={`absolute cursor-pointer -right-2 lg:-right-5 top-9 border-slate-100 border-5 rounded-full
-                        ${!open && "rotate-180"}
-                        ${open ? "w-12 -translate-x-10" : "w-9 -translate-x-10"}
-                        transition duration-300`}
+                    className={`
+                        absolute cursor-pointer top-8
+                        transition duration-300 border border-gray-200 rounded-full shadow
+                        ${open ? "right-[-18px] w-10" : "right-[-18px] w-8 rotate-180"}
+                    `}
                     onClick={() => setOpen(!open)}
                     alt="Control"
                 />
@@ -155,9 +130,9 @@ export function Sidebar({ logout }) {
                     <img
                         onClick={handleClick}
                         src={logoToShow}
-                        className={`cursor-pointer duration-500 ${
+                        className={`cursor-pointer duration-500 hidden lg:block ${
                             open && "rotate-[360deg]"
-                        } ${open ? "lg:block block w-36" : "lg:block hidden"}`}
+                        } w-36`}
                         alt="Logo"
                     />
                 </div>
@@ -174,8 +149,8 @@ export function Sidebar({ logout }) {
                             <li
                                 key={index}
                                 className={`flex lg:text-sm md:text-base text-xl rounded-md cursor-pointer py-2 px-8 lg:px-3 my-1
-                                hover:bg-slate-200 hover:text-indigo-800 font-medium text-gray-900 gap-x-5
-                                transition ${Menu.gap ? "mt-9" : "mt-2"}`}
+                                    hover:bg-slate-200 hover:text-indigo-800 font-medium text-gray-900 gap-x-5
+                                    transition ${Menu.gap ? "mt-9" : "mt-2"}`}
                             >
                                 {/* Cerrar sesión */}
                                 {Menu.title === "Cerrar sesión" ? (
@@ -186,32 +161,43 @@ export function Sidebar({ logout }) {
                                         <img
                                             src={iconMap[Menu.src]}
                                             alt={Menu.title}
-                                            className="w-5 h-5 object-contain"
+                                            className="w-6 h-6 object-contain"
                                         />
-                                        <span className={`${!open && "hidden"} duration-700`}>
+
+                                        {/* TEXTO — móvil oculto; escritorio abierto visible */}
+                                        <span
+                                            className={`
+                                                hidden
+                                                ${open ? "lg:inline-flex" : "lg:hidden"}
+                                                duration-300 whitespace-nowrap
+                                            `}
+                                        >
                                             {Menu.title}
                                         </span>
                                     </div>
                                 ) : (
-                                    <Link
-                                        to={Menu.link}
-                                        className="flex items-center gap-x-4"
-                                    >
+                                    <Link to={Menu.link} className="flex items-center gap-x-4">
                                         <img
                                             src={iconMap[Menu.src]}
                                             alt={Menu.title}
-                                            className="w-5 h-5 object-contain"
+                                            className="w-6 h-6 object-contain"
                                         />
 
+                                        {/* TEXTO — móvil oculto; escritorio abierto visible */}
                                         <span
-                                            className={`${!open && "hidden"} duration-700 flex items-center gap-2`}
+                                            className={`
+                                                hidden 
+                                                ${open ? "lg:inline-flex" : "lg:hidden"}
+                                                duration-300 whitespace-nowrap items-center gap-2
+                                            `}
                                         >
                                             {Menu.title}
 
-                                            {/* Badge de permisos */}
+                                            {/* badge */}
                                             {Menu.title === "Permisos" &&
                                                 isAdmin &&
-                                                pendientes > 0 && (
+                                                pendientes > 0 &&
+                                                open && (
                                                     <span className="bg-red-600 text-white text-[10px] px-2 py-[2px] rounded-full">
                                                         {pendientes}
                                                     </span>

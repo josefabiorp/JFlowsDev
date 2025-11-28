@@ -4,8 +4,6 @@ import { useUser } from "../hooks/UserContext.jsx";
 import { Header } from "../Header.jsx";
 import { Footer } from "../Footer.jsx";
 import "../../index.css";
-
-// 🔥 Importamos API_URL global
 import { API_URL } from "../../config/api";
 
 export function Login() {
@@ -22,10 +20,10 @@ export function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrors({});
 
     try {
       const response = await fetch(`${API_URL}/login`, {
-        // ←🔥 ÚNICO CAMBIO
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -45,8 +43,8 @@ export function Login() {
         });
       }
     } catch (error) {
-      console.error("Error:", error.message);
-      setErrors({ server: "Hubo un problema al intentar iniciar sesión." });
+      console.error("Error:", error);
+      setErrors({ server: "Hubo un problema con el servidor." });
     } finally {
       setIsLoading(false);
     }
@@ -55,31 +53,32 @@ export function Login() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400 flex flex-col justify-center items-center py-12 px-6">
-        <div className="flex flex-col md:flex-row bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-200">
-          {/* Lado Izquierdo / Branding */}
-          <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-sky-800 to-indigo-900 text-white flex-col justify-center items-center p-12 space-y-6">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold mb-3">JFlows Dev</h2>
-              <p className="text-sm text-slate-100">
-                Sistema corporativo de gestión y control de empleados.
-              </p>
-            </div>
+
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden flex flex-col md:flex-row">
+          
+          {/* IZQUIERDA — Branding (oculto en móvil) */}
+          <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-sky-800 to-indigo-900 text-white p-10 flex-col items-center justify-center space-y-6">
+            <h2 className="text-3xl font-bold">JFlows Dev</h2>
+            <p className="text-slate-200 text-sm text-center leading-relaxed">
+              Sistema corporativo para gestión de empleados, asistencia y RRHH.
+            </p>
+
             <img
               src="/login-illustration.svg"
               alt="Illustration"
-              className="w-64 opacity-90 drop-shadow-xl"
+              className="w-60 opacity-90 drop-shadow-xl"
               onError={(e) => (e.target.style.display = "none")}
             />
           </div>
 
-          {/* Lado Derecho / Formulario */}
+          {/* DERECHA — Formulario */}
           <div className="w-full md:w-1/2 p-8 sm:p-12">
-            <h1 className="text-3xl font-bold text-sky-900 mb-6 text-center">
+            <h1 className="text-3xl font-bold text-sky-900 text-center mb-4">
               Iniciar Sesión
             </h1>
             <p className="text-gray-600 text-center mb-8">
-              Bienvenido(a) de nuevo. Ingresa tus credenciales para continuar.
+              Bienvenido(a), ingresa tus credenciales.
             </p>
 
             <form onSubmit={handleLogin} className="space-y-6">
@@ -96,8 +95,8 @@ export function Login() {
                   id="email"
                   value={formData.email}
                   onChange={handleChange}
+                  className="w-full p-2.5 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-sky-700 focus:border-sky-700 transition"
                   required
-                  className="w-full p-2.5 rounded-md border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-sky-600 focus:border-sky-600 transition-all"
                   placeholder="correo@empresa.com"
                 />
               </div>
@@ -115,24 +114,24 @@ export function Login() {
                   id="password"
                   value={formData.password}
                   onChange={handleChange}
+                  className="w-full p-2.5 rounded-lg border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-sky-700 focus:border-sky-700 transition"
                   required
-                  className="w-full p-2.5 rounded-md border border-gray-300 bg-gray-50 focus:ring-2 focus:ring-sky-600 focus:border-sky-600 transition-all"
                   placeholder="••••••••"
                 />
               </div>
 
               {/* Error */}
               {errors.server && (
-                <p className="text-pink-700 font-semibold text-sm text-center mt-2">
+                <p className="text-pink-700 font-semibold text-sm text-center">
                   {errors.server}
                 </p>
               )}
 
               {/* Forgot password */}
-              <div className="text-right text-sm mt-2">
+              <div className="text-right text-sm">
                 <Link
                   to="/forgotpassword"
-                  className="text-sky-700 hover:text-sky-900 italic font-medium transition-all"
+                  className="text-sky-700 hover:text-sky-900 font-medium italic transition"
                 >
                   ¿Olvidaste tu contraseña?
                 </Link>
@@ -142,21 +141,21 @@ export function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full py-3 mt-4 rounded-lg text-white font-semibold text-lg transition-all ${
+                className={`w-full py-3 rounded-lg text-white font-semibold text-lg transition ${
                   isLoading
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-sky-700 hover:bg-sky-800 shadow-md hover:shadow-lg"
+                    : "bg-sky-800 hover:bg-sky-900 shadow-lg"
                 }`}
               >
                 {isLoading ? "Verificando..." : "Iniciar sesión"}
               </button>
 
               {/* Registro */}
-              <p className="text-center text-gray-600 text-sm mt-6">
-                ¿Aún no tienes una cuenta?{" "}
+              <p className="text-center text-sm text-gray-700 mt-4">
+                ¿No tienes una cuenta?{" "}
                 <Link
                   to="/Registro"
-                  className="text-sky-700 hover:text-sky-900 font-semibold underline transition"
+                  className="text-sky-700 hover:text-sky-900 underline font-semibold"
                 >
                   Regístrate aquí
                 </Link>
@@ -165,6 +164,7 @@ export function Login() {
           </div>
         </div>
       </div>
+
       <Footer />
     </>
   );
