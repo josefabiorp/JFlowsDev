@@ -10,6 +10,33 @@ import { buildStaticMapUrl } from "../utils/mapUtils.js";
 
 import { useAsignacionTurnos } from "../hooks/useAsignacionTurnos.js";
 
+// ======================================================
+// NUEVO: Formateo corporativo de horas
+// ======================================================
+const formatHour = (value) => {
+  if (!value) return "—";
+
+  // Si ya viene como "14:00:00"
+  if (/^\d{2}:\d{2}/.test(value)) {
+    const [h, m] = value.split(":");
+    const date = new Date();
+    date.setHours(h, m);
+    return date.toLocaleTimeString("es-CR", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  // Si viene con fecha completa
+  const d = new Date(value);
+  if (isNaN(d)) return value;
+
+  return d.toLocaleTimeString("es-CR", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
 export function AsistenciaEmpleado({
   user,
   token,
@@ -28,8 +55,8 @@ export function AsistenciaEmpleado({
   getMonthRange,
   getYearRange,
   cargarReporte,
-  setShowReportModal, turnoEmpleadoModal,
-  
+  setShowReportModal,
+  turnoEmpleadoModal,
 }) {
 
   // ======================================================
@@ -104,7 +131,12 @@ export function AsistenciaEmpleado({
             </h3>
 
             <p><strong>Nombre:</strong> {turnoEmpleado.nombre}</p>
-            <p><strong>Horario:</strong> {turnoEmpleado.hora_inicio} – {turnoEmpleado.hora_fin}</p>
+
+            {/* Cambiado SOLO esta línea */}
+            <p>
+              <strong>Horario:</strong>{" "}
+              {formatHour(turnoEmpleado.hora_inicio)} – {formatHour(turnoEmpleado.hora_fin)}
+            </p>
 
             <p className="mt-2">
               <strong>Tolerancia entrada:</strong> {turnoEmpleado.tolerancia_entrada} min
@@ -198,14 +230,12 @@ export function AsistenciaEmpleado({
               .
             </p>
 
-            {/* Total simple */}
             {resumenAsistencia.total && (
               <p className="text-green-700 font-bold text-xl mt-3">
                 Total (sin política): {resumenAsistencia.total}
               </p>
             )}
 
-            {/* Total avanzado */}
             {resumenAvanzado && resumenAvanzado.totalMin != null && (
               <div className="mt-4 text-sm text-left bg-sky-50 border border-sky-100 rounded-xl p-4">
                 <p>
@@ -220,9 +250,7 @@ export function AsistenciaEmpleado({
 
                 <p>
                   <span className="font-semibold">
-                    Total ajustado por política (
-                    {resumenAvanzado?.modoRedondeo || "normal"}
-                    )
+                    Total ajustado por política ({resumenAvanzado?.modoRedondeo || "normal"})
                   </span>{" "}
                   {minutesToLabel(resumenAvanzado.totalMinAjustado)}
                 </p>
@@ -234,8 +262,7 @@ export function AsistenciaEmpleado({
 
                 {resumenAvanzado.excesoDescansoMin > 0 && (
                   <p className="text-red-600 font-semibold">
-                    Exceso de descansos:{" "}
-                    {minutesToLabel(resumenAvanzado.excesoDescansoMin)}
+                    Exceso de descansos: {minutesToLabel(resumenAvanzado.excesoDescansoMin)}
                   </p>
                 )}
 

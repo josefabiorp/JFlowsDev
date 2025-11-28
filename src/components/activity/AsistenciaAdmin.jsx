@@ -5,10 +5,9 @@ import { getSucursalName } from "../utils/empleadosUtils";
 
 /**
  * Panel ADMIN de asistencias
- * - Producción-ready
- * - Incluye columna de backend
- * - NO toca lógica de  * - NO agrega nuevas lTURNO
-lamadas a API
+ * - Lista empleados
+ * - Muestra sucursal, turno y estado (circulito)
+ * - Dispara el modal de detalle mediante `abrirDetalleEmpleado`
  */
 export function AsistenciaAdmin({
   empleados,
@@ -24,8 +23,8 @@ export function AsistenciaAdmin({
   exportarCSV,
   imprimirTabla,
 
-  abrirDetalleEmpleado,
-  estadoEmpleados,
+  abrirDetalleEmpleado,   // <- viene desde RegistroAsistencias
+  estadoEmpleados,        // <- objeto { [empleadoId]: "presente" | "fuera" | ... }
 }) {
   return (
     <div className="bg-white rounded-xl shadow p-6">
@@ -72,7 +71,6 @@ export function AsistenciaAdmin({
               <th className="px-3 py-2">Nombre</th>
               <th className="px-3 py-2">Rol</th>
               <th className="px-3 py-2">Sucursal</th>
-              {/* 🔵 NUEVA COLUMNA: TURNO */}
               <th className="px-3 py-2">Turno</th>
               <th className="px-3 py-2">Estado</th>
               <th className="px-3 py-2">Detalle</th>
@@ -94,7 +92,7 @@ export function AsistenciaAdmin({
                   {getSucursalName(sucursales, e.sucursal_id)}
                 </td>
 
-                {/* 🔵 TURNO ASIGNADO (si viene del backend como e.turno) */}
+                {/* TURNO (si viene cargado desde el backend como e.turno) */}
                 <td className="py-2">
                   {e.turno?.nombre ? (
                     <div className="leading-tight">
@@ -113,7 +111,7 @@ export function AsistenciaAdmin({
                   )}
                 </td>
 
-                {/* ESTADO (lógica ORIGINAL, restaurada) */}
+                {/* ESTADO (circulito) */}
                 <td className="py-2">
                   <span
                     className={`inline-block w-3 h-3 rounded-full ${

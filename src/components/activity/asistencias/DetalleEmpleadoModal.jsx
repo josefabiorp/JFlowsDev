@@ -1,18 +1,75 @@
 // ===============================================================
 //   MODAL PROFESIONAL — DETALLE DE EMPLEADO (ADMIN)
-//   Usa: turno, dia_a_dia, resumen de /asistencias/rango
+//   Con impresión corporativa + fecha elegante
 // ===============================================================
 
 import React from "react";
 import { AppModal } from "../AppModal.jsx";
-import { buildStaticMapUrl, formatTime } from "./helpers.js";
+import { buildStaticMapUrl } from "./helpers.js";
+import { FaPrint } from "react-icons/fa";
 
-// Formatea minutos → "8h 30m"
+// -------------------------------
+// FORMATOS CORPORATIVOS
+// -------------------------------
+
 const minToLabel = (min) => {
-  if (min == null) return "—";
+  if (min == null || isNaN(min)) return "—";
   const h = Math.floor(min / 60);
   const m = min % 60;
   return `${h}h ${m}m`;
+};
+
+const formatHourReadable = (value) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (isNaN(date.getTime())) {
+    const [h, m] = value.split(":");
+    return new Date(`1970-01-01T${h}:${m}`).toLocaleTimeString("es-CR", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+  return date.toLocaleTimeString("es-CR", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+// **📌 NUEVO: fecha corporativa**
+const formatFechaCorta = (fechaISO) => {
+  if (!fechaISO) return "—";
+  const d = new Date(fechaISO);
+  return d.toLocaleDateString("es-CR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+// -------------------------------
+// IMPRIMIR DETALLE
+// -------------------------------
+const imprimirDetalle = () => {
+  const contenido = document.getElementById("detalle-empleado-print").innerHTML;
+  const ventana = window.open("", "_blank", "width=1200,height=800");
+  ventana.document.write(`
+      <html>
+        <head>
+          <title>Detalle de empleado</title>
+          <style>
+            body { font-family: Arial; padding:20px; }
+            h1, h2, h3 { font-family: Arial; }
+            table { width:100%; border-collapse:collapse; margin-top:20px; }
+            th, td { border:1px solid #ccc; padding:8px; }
+            th { background:#f2f2f2; }
+          </style>
+        </head>
+        <body>${contenido}</body>
+      </html>
+  `);
+  ventana.document.close();
+  ventana.focus();
+  ventana.print();
 };
 
 export function DetalleEmpleadoModal({
@@ -20,345 +77,333 @@ export function DetalleEmpleadoModal({
   onClose,
   selectedEmployee,
 
-  // sucursal del empleado (ya resuelta afuera)
   sucursalEmpleadoModal,
 
-  // estado del día actual
   modalLoading,
   modalEstadoActual,
   modalAsistencia,
 
-  // filtros de rango
   rangoFechas,
   setRangoFechas,
   fetchAsistenciasRango,
 
-  // 🔵 arreglo que viene de data.dia_a_dia
   historial,
-
-  // 🔵 resumen que viene de data.resumen
   resumenRango,
 
-  // 🔵 turno que viene de data.turno
   turnoEmpleadoModal,
 }) {
+  // ============================================================
+  // CÁLCULO DEL DÍA — elegir el más preciso
+  // ============================================================
+  const calculoDelDia = historial?.find(
+    (h) => h.fecha === modalAsistencia?.fecha
+  );
+
+  const datos =
+    calculoDelDia ||
+    (modalAsistencia && {
+      fecha: modalAsistencia.fecha,
+      trabajado_min: modalAsistencia.minutos_trabajados,
+      atraso_min: modalAsistencia.minutos_atraso ?? 0,
+      salida_anticipada_min: modalAsistencia.minutos_salida_anticipada ?? 0,
+      horas_extra_min: modalAsistencia.minutos_horas_extra ?? 0,
+      descansos_usados_min: modalAsistencia.minutos_descansos ?? 0,
+      exceso_descanso_min: modalAsistencia.minutos_exceso_descanso ?? 0,
+      estado_jornada: modalAsistencia.estado_jornada ?? "—",
+      cumplio_turno: modalAsistencia.cumplio_turno ?? false,
+    });
+
   return (
     <AppModal
-      isOpen={isOpen && !!selectedEmployee}
+      isOpen={isOpen}
       onClose={onClose}
       title={`📑 Detalle de asistencia — ${selectedEmployee?.nombre || ""}`}
       size="xl"
     >
-      <div className="space-y-6">
-        {/* ================================
-            PANEL DEL DÍA (actual)
-        ================================ */}
-        {modalLoading ? (
-          <div className="text-gray-500 text-sm">Cargando datos…</div>
-        ) : (
-          <div className="bg-gray-50 border p-4 rounded-xl shadow-sm text-sm">
-            <h3 className="font-bold text-lg mb-3 text-sky-800">
-              📅 Jornada de hoy
-            </h3>
 
-            <p>
-              <span className="font-semibold">Estado:</span>{" "}
-              {modalEstadoActual || "sin_entrada"}
-            </p>
+      {/* ----------------- BOTÓN IMPRIMIR ----------------- */}
+      <div className="flex justify-end mb-3">
+        <button
+          onClick={imprimirDetalle}
+          className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm shadow"
+        >
+          <FaPrint /> Imprimir detalle
+        </button>
+      </div>
 
-            <p>
-              <span className="font-semibold">Entrada:</span>{" "}
-              {formatTime(modalAsistencia?.hora_entrada)}
-            </p>
-            <p>
-              <span className="font-semibold">Salida:</span>{" "}
-              {formatTime(modalAsistencia?.hora_salida)}
-            </p>
+      {/* TODO LO QUE SE IMPRIME VA AQUÍ */}
+      <div id="detalle-empleado-print">
+        <div className="space-y-6">
 
-            {/* =============================
-                🔵 TURNO DEL EMPLEADO (global)
-            ============================= */}
-            {turnoEmpleadoModal && (
-              <div className="mt-3 bg-blue-50 border border-blue-200 p-3 rounded-lg">
-                <h4 className="text-blue-800 font-bold text-md mb-1">
-                  📌 Turno asignado
-                </h4>
+          {/* ====================================================
+              PANEL DEL DÍA
+          ==================================================== */}
+          {modalLoading ? (
+            <div className="text-gray-500 text-sm">Cargando datos…</div>
+          ) : (
+            <div className="bg-gray-50 border p-4 rounded-xl shadow-sm text-sm">
+              <h3 className="font-bold text-lg mb-3 text-sky-800">
+                📅 Jornada de hoy
+              </h3>
 
+              <div className="grid sm:grid-cols-3 gap-y-1">
                 <p>
-                  <span className="font-semibold">Turno:</span>{" "}
-                  {turnoEmpleadoModal.nombre}
+                  <span className="font-semibold">Estado:</span>{" "}
+                  {modalEstadoActual}
                 </p>
 
                 <p>
-                  <span className="font-semibold">Horario:</span>{" "}
-                  {turnoEmpleadoModal.hora_inicio} –{" "}
-                  {turnoEmpleadoModal.hora_fin}
-                </p>
-
-                <p className="mt-2">
-                  <span className="font-semibold">Tolerancias:</span>{" "}
-                  {turnoEmpleadoModal.tolerancia_entrada}m entrada /{" "}
-                  {turnoEmpleadoModal.tolerancia_salida}m salida
+                  <span className="font-semibold">Entrada:</span>{" "}
+                  {formatHourReadable(modalAsistencia?.hora_entrada)}
                 </p>
 
                 <p>
-                  <span className="font-semibold">Almuerzo:</span>{" "}
-                  {turnoEmpleadoModal.minutos_almuerzo} min
+                  <span className="font-semibold">Salida:</span>{" "}
+                  {formatHourReadable(modalAsistencia?.hora_salida)}
                 </p>
               </div>
-            )}
 
-            {/* =============================
-                📊 DIAGNÓSTICO DEL DÍA
-            ============================= */}
-            {modalAsistencia && (
-              <div className="mt-3 bg-white border p-3 rounded-lg shadow-inner">
-                <h4 className="font-bold text-md text-gray-800 mb-2">
-                  📊 Diagnóstico del día
-                </h4>
+              {/* TURNO */}
+              {turnoEmpleadoModal && (
+                <div className="mt-3 bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                  <h4 className="text-blue-800 font-bold text-md mb-2">
+                    📌 Turno asignado
+                  </h4>
+
+                  <div className="grid sm:grid-cols-2 gap-y-1">
+                    <p>
+                      <span className="font-semibold">Turno:</span>{" "}
+                      {turnoEmpleadoModal.nombre}
+                    </p>
+
+                    <p>
+                      <span className="font-semibold">Horario:</span>{" "}
+                      {formatHourReadable(turnoEmpleadoModal.hora_inicio)} –{" "}
+                      {formatHourReadable(turnoEmpleadoModal.hora_fin)}
+                    </p>
+
+                    <p>
+                      <span className="font-semibold">Tolerancias:</span>{" "}
+                      {turnoEmpleadoModal.tolerancia_entrada}m entrada /{" "}
+                      {turnoEmpleadoModal.tolerancia_salida}m salida
+                    </p>
+
+                    <p>
+                      <span className="font-semibold">Almuerzo:</span>{" "}
+                      {minToLabel(turnoEmpleadoModal.minutos_almuerzo)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ====================================================
+              RESULTADO DE LA JORNADA
+          ==================================================== */}
+          {datos && (
+            <div className="bg-white border p-4 rounded-xl shadow-sm text-sm">
+              <h3 className="font-bold text-lg text-gray-800 mb-3">
+                ⭐ Resultado de la jornada
+              </h3>
+
+              <div className="grid sm:grid-cols-3 gap-y-1">
+                <p>
+                  <span className="font-semibold">Trabajado:</span>{" "}
+                  {minToLabel(datos.trabajado_min)}
+                </p>
 
                 <p>
                   <span className="font-semibold">Atraso:</span>{" "}
-                  {modalAsistencia.minutos_atraso ?? 0} min
+                  {minToLabel(datos.atraso_min)}
                 </p>
 
                 <p>
                   <span className="font-semibold">Salida anticipada:</span>{" "}
-                  {modalAsistencia.minutos_salida_anticipada ?? 0} min
+                  {minToLabel(datos.salida_anticipada_min)}
                 </p>
 
                 <p>
                   <span className="font-semibold">Horas extra:</span>{" "}
-                  {modalAsistencia.minutos_horas_extra
-                    ? minToLabel(modalAsistencia.minutos_horas_extra)
-                    : "0"}
+                  {minToLabel(datos.horas_extra_min)}
                 </p>
 
                 <p>
-                  <span className="font-semibold">Trabajado real:</span>{" "}
-                  {modalAsistencia.minutos_trabajados != null
-                    ? minToLabel(modalAsistencia.minutos_trabajados)
-                    : "—"}
+                  <span className="font-semibold">Descansos usados:</span>{" "}
+                  {minToLabel(datos.descansos_usados_min)}
                 </p>
 
-                <p className="mt-1">
+                <p>
+                  <span className="font-semibold">Exceso descanso:</span>{" "}
+                  {minToLabel(datos.exceso_descanso_min)}
+                </p>
+
+                <p className="col-span-3 mt-2">
                   <span className="font-semibold">Estado jornada:</span>{" "}
-                  {modalAsistencia.estado_jornada || "—"}
+                  {datos.estado_jornada}
+                </p>
+
+                <p className="col-span-3 flex items-center gap-2 mt-1">
+                  <span className="font-semibold">Cumplió turno:</span>
+                  {datos.cumplio_turno ? "🟢 Sí" : "🔴 No"}
                 </p>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* ===============================
-            RESUMEN DEL RANGO
-        =============================== */}
-        {resumenRango && (
-          <div className="bg-sky-50 border border-sky-100 p-4 rounded-xl shadow-sm text-sm">
-            <h3 className="font-bold text-sky-900 text-lg mb-2">
-              📈 Resumen del periodo
+          {/* ====================================================
+              SUCURSAL
+          ==================================================== */}
+          {sucursalEmpleadoModal && (
+            <div className="border p-3 rounded-xl shadow-sm text-sm">
+              <h3 className="font-semibold mb-2">📍 Sucursal del empleado</h3>
+
+              <p>
+                <span className="font-semibold">Nombre:</span>{" "}
+                {sucursalEmpleadoModal.nombre}
+              </p>
+
+              {sucursalEmpleadoModal.direccion && (
+                <p>
+                  <span className="font-semibold">Dirección:</span>{" "}
+                  {sucursalEmpleadoModal.direccion}
+                </p>
+              )}
+
+              {sucursalEmpleadoModal.latitud &&
+                sucursalEmpleadoModal.longitud && (
+                  <img
+                    src={buildStaticMapUrl(
+                      sucursalEmpleadoModal.latitud,
+                      sucursalEmpleadoModal.longitud,
+                      14,
+                      "500x250"
+                    )}
+                    className="rounded-lg border shadow mt-2"
+                    alt="Mapa sucursal"
+                  />
+                )}
+            </div>
+          )}
+
+          {/* ====================================================
+              HISTORIAL
+          ==================================================== */}
+          <div>
+            <h3 className="font-semibold mb-2 text-lg">
+              📚 Historial del empleado
             </h3>
 
-            <div className="grid sm:grid-cols-2 gap-2">
-              <p>
-                <span className="font-semibold">Días con registros:</span>{" "}
-                {resumenRango.dias}
-              </p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <input
+                type="date"
+                className="border px-3 py-2 rounded-lg text-sm"
+                value={rangoFechas.from}
+                onChange={(e) =>
+                  setRangoFechas((prev) => ({ ...prev, from: e.target.value }))
+                }
+              />
 
-              <p>
-                <span className="font-semibold">Total trabajado:</span>{" "}
-                {minToLabel(resumenRango.total_trabajado_min)}
-              </p>
+              <input
+                type="date"
+                className="border px-3 py-2 rounded-lg text-sm"
+                value={rangoFechas.to}
+                onChange={(e) =>
+                  setRangoFechas((prev) => ({ ...prev, to: e.target.value }))
+                }
+              />
 
-              <p>
-                <span className="font-semibold">Total horas extra:</span>{" "}
-                {minToLabel(resumenRango.total_extra_min)}
-              </p>
-
-              <p>
-                <span className="font-semibold">Total atraso:</span>{" "}
-                {minToLabel(resumenRango.total_atraso_min)}
-              </p>
-
-              <p>
-                <span className="font-semibold">
-                  Total salida anticipada:
-                </span>{" "}
-                {minToLabel(resumenRango.total_salida_anticipada_min)}
-              </p>
-
-              <p>
-                <span className="font-semibold">Descansos usados:</span>{" "}
-                {minToLabel(resumenRango.total_descansos_min)}
-              </p>
-
-              <p>
-                <span className="font-semibold">Exceso de descansos:</span>{" "}
-                {minToLabel(resumenRango.exceso_descanso_sum)}
-              </p>
-
-              <p>
-                <span className="font-semibold">Cumplimiento general:</span>{" "}
-                {resumenRango.cumplimiento_general}
-              </p>
+              <button
+                className="bg-sky-700 hover:bg-sky-800 text-white px-4 py-2 rounded-lg text-sm"
+                onClick={() =>
+                  fetchAsistenciasRango(
+                    selectedEmployee.id,
+                    rangoFechas.from,
+                    rangoFechas.to
+                  )
+                }
+              >
+                Consultar
+              </button>
             </div>
-          </div>
-        )}
 
-        {/* ===============================
-            SUCURSAL
-        =============================== */}
-        {sucursalEmpleadoModal && (
-          <div className="border p-3 rounded-lg shadow-sm text-sm">
-            <h3 className="font-semibold mb-2">📍 Sucursal del empleado</h3>
+            <div className="max-h-[350px] overflow-auto border rounded-lg shadow-sm">
+              <table className="min-w-full text-sm text-center border-collapse">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 border">Fecha</th>
+                    <th className="px-3 py-2 border">Entrada</th>
+                    <th className="px-3 py-2 border">Salida</th>
+                    <th className="px-3 py-2 border">Trabajado</th>
+                    <th className="px-3 py-2 border">Atraso</th>
+                    <th className="px-3 py-2 border">Salida ant.</th>
+                    <th className="px-3 py-2 border">Extra</th>
+                    <th className="px-3 py-2 border">Descansos</th>
+                    <th className="px-3 py-2 border">Exceso desc.</th>
+                    <th className="px-3 py-2 border">Cumplió</th>
+                    <th className="px-3 py-2 border">Estado</th>
+                  </tr>
+                </thead>
 
-            <p>
-              <span className="font-semibold">Nombre:</span>{" "}
-              {sucursalEmpleadoModal.nombre}
-            </p>
+                <tbody>
+                  {historial.length ? (
+                    historial.map((h, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="px-3 py-2 border">
+                          {formatFechaCorta(h.fecha)}
+                        </td>
 
-            {sucursalEmpleadoModal.direccion && (
-              <p>
-                <span className="font-semibold">Dirección:</span>{" "}
-                {sucursalEmpleadoModal.direccion}
-              </p>
-            )}
+                        <td className="px-3 py-2 border">
+                          {formatHourReadable(h.entrada)}
+                        </td>
 
-            {sucursalEmpleadoModal.latitud &&
-              sucursalEmpleadoModal.longitud && (
-                <img
-                  src={buildStaticMapUrl(
-                    sucursalEmpleadoModal.latitud,
-                    sucursalEmpleadoModal.longitud,
-                    14,
-                    "500x250"
-                  )}
-                  alt="Mapa sucursal"
-                  className="rounded-lg border shadow mt-2"
-                />
-              )}
-          </div>
-        )}
+                        <td className="px-3 py-2 border">
+                          {formatHourReadable(h.salida)}
+                        </td>
 
-        {/* ===============================
-            HISTORIAL DIA A DIA
-        =============================== */}
-        <div>
-          <h3 className="font-semibold mb-2 text-lg">
-            📚 Historial del empleado
-          </h3>
+                        <td className="px-3 py-2 border">
+                          {minToLabel(h.trabajado_min)}
+                        </td>
 
-          <div className="flex flex-wrap gap-2 mb-3">
-            <input
-              type="date"
-              className="border px-3 py-2 rounded-lg text-sm"
-              value={rangoFechas.from}
-              onChange={(e) =>
-                setRangoFechas((prev) => ({ ...prev, from: e.target.value }))
-              }
-            />
+                        <td className="px-3 py-2 border">
+                          {minToLabel(h.atraso_min)}
+                        </td>
 
-            <input
-              type="date"
-              className="border px-3 py-2 rounded-lg text-sm"
-              value={rangoFechas.to}
-              onChange={(e) =>
-                setRangoFechas((prev) => ({ ...prev, to: e.target.value }))
-              }
-            />
+                        <td className="px-3 py-2 border">
+                          {minToLabel(h.salida_anticipada_min)}
+                        </td>
 
-            <button
-              className="bg-sky-700 hover:bg-sky-800 text-white px-4 py-2 rounded-lg text-sm"
-              onClick={() =>
-                fetchAsistenciasRango(
-                  selectedEmployee.id,
-                  rangoFechas.from,
-                  rangoFechas.to
-                )
-              }
-            >
-              Consultar
-            </button>
-          </div>
+                        <td className="px-3 py-2 border">
+                          {minToLabel(h.horas_extra_min)}
+                        </td>
 
-          <div className="max-h-[350px] overflow-auto border rounded-lg shadow-sm">
-            <table className="min-w-full text-sm text-center border-collapse">
-              <thead className="bg-gray-100 sticky top-0">
-                <tr>
-                  <th className="px-3 py-2 border">Fecha</th>
-                  <th className="px-3 py-2 border">Entrada</th>
-                  <th className="px-3 py-2 border">Salida</th>
-                  <th className="px-3 py-2 border">Trabajado</th>
-                  <th className="px-3 py-2 border">Atraso</th>
-                  <th className="px-3 py-2 border">Salida ant.</th>
-                  <th className="px-3 py-2 border">Extra</th>
-                  <th className="px-3 py-2 border">Descansos</th>
-                  <th className="px-3 py-2 border">Exceso desc.</th>
-                  <th className="px-3 py-2 border">Cumplió turno</th>
-                  <th className="px-3 py-2 border">Estado</th>
-                </tr>
-              </thead>
+                        <td className="px-3 py-2 border">
+                          {minToLabel(h.descansos_usados_min)}
+                        </td>
 
-              <tbody>
-                {historial.length > 0 ? (
-                  historial.map((h, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 border">{h.fecha}</td>
+                        <td className="px-3 py-2 border">
+                          {minToLabel(h.exceso_descanso_min)}
+                        </td>
 
-                      <td className="px-3 py-2 border">
-                        {formatTime(h.entrada)}
-                      </td>
+                        <td className="px-3 py-2 border">
+                          {h.cumplio_turno ? "🟢 Sí" : "🔴 No"}
+                        </td>
 
-                      <td className="px-3 py-2 border">
-                        {formatTime(h.salida)}
-                      </td>
-
-                      <td className="px-3 py-2 border">
-                        {minToLabel(h.trabajado_min)}
-                      </td>
-
-                      <td className="px-3 py-2 border">
-                        {h.atraso_min ?? 0}m
-                      </td>
-
-                      <td className="px-3 py-2 border">
-                        {h.salida_anticipada_min ?? 0}m
-                      </td>
-
-                      <td className="px-3 py-2 border">
-                        {minToLabel(h.horas_extra_min)}
-                      </td>
-
-                      <td className="px-3 py-2 border">
-                        {minToLabel(h.descansos_usados_min)}
-                      </td>
-
-                      <td className="px-3 py-2 border">
-                        {minToLabel(h.exceso_descanso_min)}
-                      </td>
-
-                      <td className="px-3 py-2 border">
-                        {h.cumplio_turno ? "✅ Sí" : "❌ No"}
-                      </td>
-
-                      <td className="px-3 py-2 border">
-                        {h.estado_jornada || "—"}
+                        <td className="px-3 py-2 border">{h.estado_jornada}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={11} className="py-3 text-gray-500 italic">
+                        No hay registros para este periodo.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={11}
-                      className="py-3 text-gray-500 italic text-center"
-                    >
-                      No hay registros para este periodo.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
+
         </div>
       </div>
     </AppModal>

@@ -246,29 +246,7 @@ export function RegistroAsistencias() {
   }, [isAdmin, empleados, cargarEstadosEmpleados]);
 
   // ===============================================================
-  //  ADMIN: abrir modal del empleado
-  // ===============================================================
-  const abrirDetalleEmpleado = async (emp) => {
-    setSelectedEmployee(emp);
-
-    setModalEstadoActual(null);
-    setModalAsistencia(null);
-
-    // reset rango
-    setHistorial([]);
-    setRangoFechas({ from: "", to: "" });
-
-    // reset corporativo
-    setDetalleResumenRango(null);
-    setTurnoEmpleadoModal(null);
-
-    setShowDetailModal(true);
-
-    await fetchEstadoActualEmpleado(emp.id);
-  };
-
-  // ===============================================================
-  //  ADMIN: estado actual del empleado
+  //  ADMIN: estado actual del empleado (para el modal)
   // ===============================================================
   const fetchEstadoActualEmpleado = useCallback(
     async (empId) => {
@@ -322,6 +300,35 @@ export function RegistroAsistencias() {
     } catch {
       toast.error("No se pudo cargar el historial");
     }
+  };
+
+  // ===============================================================
+  //  ADMIN: abrir modal del empleado (AQUÍ EL CAMBIO PEQUEÑO)
+//  ===============================================================
+  const abrirDetalleEmpleado = async (emp) => {
+    setSelectedEmployee(emp);
+
+    setModalEstadoActual(null);
+    setModalAsistencia(null);
+
+    // Limpia historial previo
+    setHistorial([]);
+
+    // 🔹 Nuevo: fijamos por defecto el rango en HOY
+    const hoy = new Date().toISOString().slice(0, 10);
+    setRangoFechas({ from: hoy, to: hoy });
+
+    // reset corporativo
+    setDetalleResumenRango(null);
+    setTurnoEmpleadoModal(null);
+
+    setShowDetailModal(true);
+
+    // 1) Estado actual (entrada/salida)
+    await fetchEstadoActualEmpleado(emp.id);
+
+    // 2) Datos calculados del día (servicio AsistenciaCalculator vía /rango)
+    await fetchAsistenciasRango(emp.id, hoy, hoy);
   };
 
   // ===============================================================
@@ -405,8 +412,9 @@ export function RegistroAsistencias() {
 
       const data = await res.json();
       if (!res.ok) throw new Error();
+      setReporte(data.dia_a_dia || data.data || []);
 
-      setReporte(data.data || []);
+
       setTurnoReporte(data.turno || null);
 
       if (data.data?.length) {
@@ -504,6 +512,7 @@ export function RegistroAsistencias() {
               exportarCSV={exportarCSV}
               imprimirTabla={imprimirTabla}
               abrirDetalleEmpleado={abrirDetalleEmpleado}
+              fetchEstadoActualEmpleado={fetchEstadoActualEmpleado}
               estadoEmpleados={estadoEmpleados}
             />
           ) : (

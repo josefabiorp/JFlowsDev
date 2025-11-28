@@ -265,38 +265,41 @@ export function useAsistenciaAdminLogic({
   // ===============================
   //  RETORNO
   // ===============================
-  return {
-    estadoEmpleados,
-    cargarEstadosEmpleados,
+ return {
+  estadoEmpleados,
+  cargarEstadosEmpleados,
 
-    showDetailModal,
-    setShowDetailModal,
+  showDetailModal,
+  setShowDetailModal,
 
-    selectedEmployee,
-    abrirDetalleEmpleado,
+  selectedEmployee,
+  abrirDetalleEmpleado,
 
-    modalLoading,
-    modalEstadoActual,
-    modalAsistencia,
+  modalLoading,
+  modalEstadoActual,
+  modalAsistencia,
 
-    historial,
-    resumenRangoAdmin,
-    rangoFechas,
-    setRangoFechas,
-    fetchAsistenciasRango,
+  historial,
 
-    turnoReporteAdmin,
+  // 🔵 EL MODAL LO ESPERA CON ESTOS NOMBRES
+  resumenRango: resumenRangoAdmin,
+  turnoEmpleadoModal: turnoReporteAdmin,
 
-    busqueda,
-    setBusqueda,
-    sucursalFiltro,
-    setSucursalFiltro,
-    empleadosFiltrados,
+  rangoFechas,
+  setRangoFechas,
+  fetchAsistenciasRango,
 
-    refreshManualmente,
-    exportarCSV,
-    imprimirTabla,
+  busqueda,
+  setBusqueda,
+  sucursalFiltro,
+  setSucursalFiltro,
+  empleadosFiltrados,
 
-    fetchEstadoActualEmpleado,
-  };
+  refreshManualmente,
+  exportarCSV,
+  imprimirTabla,
+
+  fetchEstadoActualEmpleado,
+};
+
 }
