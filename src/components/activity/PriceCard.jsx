@@ -60,9 +60,9 @@ const Card = () => {
             }}
             className="my-2 block origin-top-left  text-6xl font-black leading-[1.2]"
         >
-            ₡6.500
+            ₡3.500
             <br />
-            al mes
+            al mes el plan basico
         </motion.span>
         <p>
             Adquiere nuestra licencia para empezar a controlar los empleados de tu empresa
