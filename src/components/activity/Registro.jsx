@@ -137,7 +137,7 @@ export function Register() {
             Crear cuenta de administrador
           </h1>
           <p className="text-center text-gray-600 mb-8 text-sm">
-            Registrá tu empresa y comenzá a usar ManagerSync
+            Registrá tu empresa y comenzá a usar JFlows Dev hoy mismo.
           </p>
 
           {/* FORMULARIO */}

@@ -395,6 +395,9 @@ export function MantenimientoEmpresas() {
                         required
                       />
 
+
+                      {/*
+
                       <button
                         type="button"
                         onClick={verificarCedulaEmpresa}
@@ -403,6 +406,9 @@ export function MantenimientoEmpresas() {
                       >
                         {isValidatingCedula ? "..." : "Validar"}
                       </button>
+
+*/}
+
                     </div>
 
                     {cedulaEmpresaStatus === "inscrito" && (
