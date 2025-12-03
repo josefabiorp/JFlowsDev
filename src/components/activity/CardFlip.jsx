@@ -28,9 +28,13 @@ Por eso ofrecemos una herramienta ágil, moderna y adaptable, diseñada para opt
             Contacto
         </h1>
 
-        <p className="lg:hidden block text-white font-sans font-semibold leading-7 rounded-lg mt-6 text-base text-balance">  Somos una empresa especializada en soluciones de facturación electrónica, 
-            comprometida con la innovación y la eficiencia en la gestión de documentos fiscales. Nuestro sistema facilita a las empresas la emisión, recepción y almacenamiento de facturas electrónicas de manera segura 
-            y conforme a las normativas legales.</p>
+        <p className="lg:hidden block text-white font-sans font-semibold leading-7 rounded-lg mt-6 text-base text-balance">  Somos una empresa especializada en el desarrollo de sistemas inteligentes para la gestión y control del talento humano. Nuestro enfoque combina tecnología moderna, experiencia en procesos empresariales y un diseño centrado en las necesidades reales de cada organización.
+
+Hemos creado un sistema integral de control de empleados que permite administrar asistencia, horarios, turnos, descansos, permisos, vacaciones y rendimiento de manera centralizada, segura y altamente eficiente. Cada módulo está diseñado para facilitar el trabajo diario, reducir errores administrativos y ofrecer información clara para una toma de decisiones más precisa.
+
+Creemos firmemente que la tecnología debe adaptarse a las personas, no al revés. Por eso desarrollamos una plataforma ágil, intuitiva y completamente personalizable, capaz de ajustarse a empresas de todos los tamaños y a distintos modelos operativos.
+
+Nuestro compromiso es brindar herramientas que optimicen el tiempo, fortalezcan el orden interno y garanticen un control laboral confiable, moderno y escalable. En JFlows Dev impulsamos la transformación digital de las empresas, ayudándolas a crecer con procesos más organizados, transparentes y eficientes.</p>
 
         <motion.div
             whileHover={{ scale: 1.1 }}
