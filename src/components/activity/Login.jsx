@@ -127,7 +127,7 @@ export function Login() {
                 </p>
               )}
 
-              {/* Forgot password */}
+              {/* Forgot password 
               <div className="text-right text-sm">
                 <Link
                   to="/forgotpassword"
@@ -135,7 +135,7 @@ export function Login() {
                 >
                   ¿Olvidaste tu contraseña?
                 </Link>
-              </div>
+              </div>*/}
 
               {/* Botón */}
               <button

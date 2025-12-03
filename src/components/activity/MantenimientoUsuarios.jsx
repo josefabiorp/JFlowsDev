@@ -374,7 +374,6 @@ export function MantenimientoUsuarios() {
                 >
                   <option value="">Seleccione un rol</option>
                   <option value="admin">Administrador</option>
-                  <option value="contador">Contador</option>
                   <option value="empleado">Empleado</option>
                 </select>
               </div>
